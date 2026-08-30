@@ -54,7 +54,7 @@ def init_db():
                 subscription_json TEXT NOT NULL
             )
         ''')
-        # Seed Master Admin
+        # Seed Master Admin if not exists
         cursor.execute("SELECT * FROM users WHERE email = 'anniadmin@gmail.com'")
         if not cursor.fetchone():
             cursor.execute('''
@@ -80,27 +80,36 @@ def get_current_user():
 
 def fallback_evaluate_all(user_tasks, curr_date_val):
     curr_dt = datetime.strptime(curr_date_val, "%Y-%m-%d").date()
-    for t in user_tasks:
-        d_date = datetime.strptime(t["deadline"], "%Y-%m-%d").date()
-        days_left = (d_date - curr_dt).days
-        cat = t.get("category", "Assignment")
+    with get_db() as conn:
+        cursor = conn.cursor()
+        for t in user_tasks:
+            d_date = datetime.strptime(t["deadline"], "%Y-%m-%d").date()
+            days_left = (d_date - curr_dt).days
+            cat = t.get("category", "Assignment")
 
-        if cat == "Exam / Test":
-            t["priority"] = "High" if days_left <= 7 else "Medium"
-            t["reason"] = f"Exam in {days_left} day(s)"
-        elif cat == "Lab Record Correction":
-            t["priority"] = "High" if days_left <= 3 else "Medium"
-            t["reason"] = f"Lab correction in {days_left} day(s)"
-        else:
-            if days_left <= 2:
+            if days_left < 0:
                 t["priority"] = "High"
-                t["reason"] = f"Deadline in {days_left} day(s)"
-            elif days_left <= 5:
-                t["priority"] = "Medium"
-                t["reason"] = f"Due in {days_left} day(s)"
+                t["reason"] = f"CRITICAL: Overdue by {abs(days_left)} day(s)! Submit immediately."
+            elif cat == "Exam / Test":
+                t["priority"] = "High" if days_left <= 7 else "Medium"
+                t["reason"] = f"Exam scheduled in {days_left} day(s)."
+            elif cat == "Lab Record Correction":
+                t["priority"] = "High" if days_left <= 3 else "Medium"
+                t["reason"] = f"Lab correction deadline in {days_left} day(s)."
             else:
-                t["priority"] = "Low"
-                t["reason"] = f"Sufficient time ({days_left} days left)"
+                if days_left <= 2:
+                    t["priority"] = "High"
+                    t["reason"] = f"Urgent: Deadline in {days_left} day(s)."
+                elif days_left <= 5:
+                    t["priority"] = "Medium"
+                    t["reason"] = f"Due in {days_left} day(s)."
+                else:
+                    t["priority"] = "Low"
+                    t["reason"] = f"Sufficient time remaining ({days_left} days left)."
+
+            cursor.execute("UPDATE tasks SET priority = ?, reason = ? WHERE id = ?",
+                           (t["priority"], t["reason"], t["id"]))
+        conn.commit()
 
 def run_gemini_global_evaluation(user_tasks, curr_date_val):
     active_tasks = [t for t in user_tasks if not t.get("completed")]
@@ -121,10 +130,11 @@ def run_gemini_global_evaluation(user_tasks, curr_date_val):
         {json.dumps(active_tasks)}
         
         Rules:
-        1. 'Exam / Test' gets highest priority (High if <= 7 days away).
-        2. 'Lab Record Correction' has immediate academic weight (High if <= 3 days).
-        3. Standard deadlines <= 2 days away MUST be 'High'. 3-5 days is 'Medium'. > 5 days is 'Low'.
-        4. Re-rank priorities comparatively across all tasks and provide a concise 1-sentence reason for each.
+        1. Overdue tasks (< 0 days left) MUST be 'High'.
+        2. 'Exam / Test' gets highest priority (High if <= 7 days away).
+        3. 'Lab Record Correction' has immediate academic weight (High if <= 3 days).
+        4. Standard deadlines <= 2 days away MUST be 'High'. 3-5 days is 'Medium'. > 5 days is 'Low'.
+        5. Provide a concise 1-sentence reason for each task.
         
         Return RAW JSON ONLY (no markdown fences):
         [
@@ -152,7 +162,8 @@ def run_gemini_global_evaluation(user_tasks, curr_date_val):
                         cursor.execute("UPDATE tasks SET priority = ?, reason = ? WHERE id = ?", 
                                        (item["priority"], item["reason"], item["id"]))
             conn.commit()
-    except Exception:
+    except Exception as e:
+        print("Gemini API Error, falling back to local heuristic:", e)
         fallback_evaluate_all(user_tasks, curr_date_val)
 
 def calculate_schedule(user_tasks):
@@ -351,7 +362,7 @@ def verify_and_reset():
     otp_storage.pop(email, None)
     return jsonify({"success": True, "message": "Password reset successfully!"})
 
-# --- Push Notification Subscription Endpoint ---
+# --- Notification Push Subscription ---
 @app.route("/api/notifications/subscribe", methods=["POST"])
 def subscribe_push():
     user = get_current_user()
@@ -437,6 +448,9 @@ def get_tasks():
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM tasks WHERE user_email = ?", (user["email"],))
         user_tasks = [dict(row) for row in cursor.fetchall()]
+
+    curr_date = get_realtime_today()
+    fallback_evaluate_all(user_tasks, curr_date)
 
     active, completed, alerts, curr_date = calculate_schedule(user_tasks)
     return jsonify({
