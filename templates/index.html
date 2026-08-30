@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Campus AI Agent - Academic Prioritizer</title>
+  <title>Campus AI Agent - Academic Matrix</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
   <style>
@@ -26,7 +26,7 @@
       
       <div class="flex items-center space-x-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-          <i class="fa-solid fa-graduation-cap text-white text-lg"></i>
+          <i class="fa-solid fa-table-cells-large text-white text-lg"></i>
         </div>
         <div>
           <h1 class="text-lg font-bold text-white tracking-tight">Campus AI Agent</h1>
@@ -37,7 +37,7 @@
       <div class="flex items-center gap-3">
         <div class="hidden sm:flex items-center gap-1.5 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs text-slate-300">
           <i class="fa-regular fa-calendar text-indigo-400"></i>
-          <span>Today:</span>
+          <span>Today (IST):</span>
           <span id="currentDateDisplay" class="font-bold text-white">--</span>
         </div>
 
@@ -63,7 +63,7 @@
   <!-- Main Content -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
     
-    <!-- Left Column: Add Task & Gemini Advisor -->
+    <!-- Left Column: Add Task & AI Advisor -->
     <div class="space-y-6">
       
       <!-- 1. Add Task Form -->
@@ -113,11 +113,8 @@
         <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
           <i class="fa-solid fa-wand-magic-sparkles text-violet-400"></i> AI Academic Advisor
         </h2>
-        <p class="text-xs text-slate-400 leading-relaxed">
-          Ask Gemini to generate study strategies or prioritize tasks based on your current workload.
-        </p>
         <div class="space-y-2">
-          <textarea id="aiPrompt" rows="3" placeholder="e.g. How should I prepare for my upcoming exam and lab records this week?" 
+          <textarea id="aiPrompt" rows="3" placeholder="e.g. How should I prioritize my urgent exam and lab records tonight?" 
                     class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-violet-500 transition"></textarea>
           <button onclick="askGemini()" id="askAiBtn" class="w-full bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-lg shadow-violet-600/30">
             Ask Academic Advisor
@@ -129,44 +126,79 @@
 
     </div>
 
-    <!-- Right Column: Prioritized Task Board -->
+    <!-- Right Column: Priority Matrix & Queue -->
     <div class="lg:col-span-2 space-y-6">
       
-      <!-- Recommended Submission Order Card -->
+      <!-- Recommended Submission Order Queue -->
       <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-3">
         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-arrow-down-1-9 text-indigo-400"></i> Recommended Submission Queue
+          <i class="fa-solid fa-arrow-down-1-9 text-indigo-400"></i> AI Recommended Submission Order
         </h3>
         <div id="submissionQueue" class="flex flex-wrap gap-2 text-xs">
           <!-- Populated dynamically -->
         </div>
       </div>
 
-      <!-- Active Prioritized Tasks -->
+      <!-- Eisenhower 2x2 Matrix Header & Grid -->
       <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <i class="fa-solid fa-list-check text-indigo-400"></i> Active Prioritized Tasks
+            <i class="fa-solid fa-border-all text-indigo-400"></i> Priority Decision Matrix
           </h2>
           <span id="activeTasksCount" class="text-xs font-bold bg-indigo-950/70 border border-indigo-800 text-indigo-300 px-2.5 py-0.5 rounded-full">0 Active</span>
         </div>
 
-        <div id="activeTasksList" class="space-y-3">
-          <!-- Populated dynamically -->
-        </div>
-      </div>
+        <!-- 2x2 Quadrant Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <!-- Q1: Urgent & Critical (High Priority - Do First) -->
+          <div class="bg-rose-950/20 border border-rose-900/40 rounded-2xl p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3 border-b border-rose-900/30 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+                <h3 class="text-xs font-bold text-rose-300 uppercase tracking-wider">Do Immediately</h3>
+              </div>
+              <span class="text-[10px] font-bold bg-rose-950/80 border border-rose-800 text-rose-300 px-2 py-0.5 rounded-md">Urgent & Critical</span>
+            </div>
+            <div id="matrixQ1" class="space-y-2.5 min-h-[110px]"></div>
+          </div>
 
-      <!-- Completed Tasks -->
-      <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-            <i class="fa-solid fa-circle-check text-emerald-400"></i> Completed Coursework
-          </h2>
-          <span id="completedTasksCount" class="text-xs font-bold bg-emerald-950/70 border border-emerald-800 text-emerald-300 px-2.5 py-0.5 rounded-full">0 Done</span>
-        </div>
+          <!-- Q2: Important / Strategic (Medium Priority - Schedule) -->
+          <div class="bg-amber-950/20 border border-amber-900/40 rounded-2xl p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3 border-b border-amber-900/30 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <h3 class="text-xs font-bold text-amber-300 uppercase tracking-wider">Schedule & Prepare</h3>
+              </div>
+              <span class="text-[10px] font-bold bg-amber-950/80 border border-amber-800 text-amber-300 px-2 py-0.5 rounded-md">Important</span>
+            </div>
+            <div id="matrixQ2" class="space-y-2.5 min-h-[110px]"></div>
+          </div>
 
-        <div id="completedTasksList" class="space-y-2 opacity-80">
-          <!-- Populated dynamically -->
+          <!-- Q3: Regular Coursework (Low Priority - Routine) -->
+          <div class="bg-emerald-950/20 border border-emerald-900/40 rounded-2xl p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3 border-b border-emerald-900/30 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <h3 class="text-xs font-bold text-emerald-300 uppercase tracking-wider">Routine Work</h3>
+              </div>
+              <span class="text-[10px] font-bold bg-emerald-950/80 border border-emerald-800 text-emerald-300 px-2 py-0.5 rounded-md">Low Urgency</span>
+            </div>
+            <div id="matrixQ3" class="space-y-2.5 min-h-[110px]"></div>
+          </div>
+
+          <!-- Q4: Completed Coursework (Archived) -->
+          <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-emerald-400 text-xs"></i>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Completed Archive</h3>
+              </div>
+              <span id="completedTasksCount" class="text-[10px] font-bold bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md">0 Done</span>
+            </div>
+            <div id="matrixQ4" class="space-y-2 max-h-48 overflow-y-auto min-h-[110px]"></div>
+          </div>
+
         </div>
       </div>
 
@@ -175,8 +207,6 @@
   </main>
 
   <script>
-    let currentTasks = [];
-
     async function loadTasks() {
       try {
         const res = await fetch('/api/tasks');
@@ -189,16 +219,18 @@
         document.getElementById('currentDateDisplay').innerText = data.current_date;
         document.getElementById('navUserName').innerText = data.user.full_name;
 
-        renderTasks(data.active_tasks, data.completed_tasks, data.submission_order);
+        renderMatrix(data.active_tasks, data.completed_tasks, data.submission_order);
         checkAndTriggerUrgentPopups(data.active_tasks);
       } catch (err) {
         console.error('Error fetching tasks:', err);
       }
     }
 
-    function renderTasks(active, completed, queue) {
-      const activeList = document.getElementById('activeTasksList');
-      const completedList = document.getElementById('completedTasksList');
+    function renderMatrix(active, completed, queue) {
+      const q1 = document.getElementById('matrixQ1');
+      const q2 = document.getElementById('matrixQ2');
+      const q3 = document.getElementById('matrixQ3');
+      const q4 = document.getElementById('matrixQ4');
       const queueBox = document.getElementById('submissionQueue');
 
       document.getElementById('activeTasksCount').innerText = `${active.length} Active`;
@@ -216,64 +248,54 @@
         `).join('');
       }
 
-      // Active Tasks
-      if (active.length === 0) {
-        activeList.innerHTML = '<div class="text-center py-8 text-xs text-slate-500">No active tasks. You are all caught up! 🎉</div>';
-      } else {
-        activeList.innerHTML = active.map(t => {
-          let badge = 'bg-slate-800 text-slate-300 border-slate-700';
-          if (t.priority === 'High') badge = 'bg-rose-950/60 border-rose-800 text-rose-300';
-          else if (t.priority === 'Medium') badge = 'bg-amber-950/60 border-amber-800 text-amber-300';
-          else if (t.priority === 'Low') badge = 'bg-emerald-950/60 border-emerald-800 text-emerald-300';
+      // Filter Quadrants
+      const q1Tasks = active.filter(t => t.priority === 'High');
+      const q2Tasks = active.filter(t => t.priority === 'Medium');
+      const q3Tasks = active.filter(t => t.priority === 'Low');
 
-          return `
-            <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-600 transition">
-              <div class="space-y-1">
-                <div class="flex items-center gap-2">
-                  <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold border ${badge}">${t.priority.toUpperCase()}</span>
-                  <span class="text-xs font-semibold text-slate-400">[ ${t.category} ]</span>
-                  <h4 class="text-sm font-bold text-white">${t.title}</h4>
-                </div>
-                <div class="text-xs text-slate-400 flex flex-wrap items-center gap-3 pt-1">
-                  <span><i class="fa-solid fa-book-open text-slate-500 mr-1"></i>${t.subject}</span>
-                  <span><i class="fa-solid fa-calendar-day text-slate-500 mr-1"></i>Due: <b class="text-slate-200">${t.deadline}</b> (${t.remaining_days})</span>
-                  <span><i class="fa-solid fa-bell text-slate-500 mr-1"></i>Reminder: ${t.reminder_date}</span>
-                </div>
-                <p class="text-[11px] text-indigo-300/80 italic pt-0.5"><i class="fa-solid fa-brain mr-1 text-[10px]"></i>AI Reason: ${t.reason || 'Evaluated'}</p>
-              </div>
-
-              <div class="flex items-center gap-2 self-end sm:self-center">
-                <input type="date" value="${t.deadline}" onchange="changeDeadline(${t.id}, this.value)" title="Change deadline" 
-                       class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-indigo-500" />
-                <button onclick="toggleComplete(${t.id})" class="bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-800 text-emerald-300 text-xs px-3 py-1.5 rounded-xl font-bold transition">
-                  <i class="fa-solid fa-check"></i>
-                </button>
-                <button onclick="deleteTask(${t.id})" class="bg-rose-950/60 hover:bg-rose-900/60 border border-rose-800 text-rose-300 text-xs px-3 py-1.5 rounded-xl font-bold transition">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </div>
+      const cardHTML = (t, borderClass) => `
+        <div class="bg-slate-900/90 border ${borderClass} rounded-xl p-3 space-y-1.5 transition">
+          <div class="flex items-start justify-between gap-2">
+            <div class="space-y-0.5">
+              <span class="text-[10px] font-semibold text-slate-400">[ ${t.category} ]</span>
+              <h4 class="text-xs font-bold text-white">${t.title}</h4>
             </div>
-          `;
-        }).join('');
-      }
-
-      // Completed Tasks
-      if (completed.length === 0) {
-        completedList.innerHTML = '<div class="text-xs text-slate-600 italic">No completed tasks yet.</div>';
-      } else {
-        completedList.innerHTML = completed.map(t => `
-          <div class="bg-slate-900/40 border border-slate-800/60 rounded-xl px-4 py-2.5 flex items-center justify-between">
-            <div class="line-through text-xs text-slate-500 flex items-center gap-2">
-              <i class="fa-solid fa-check-circle text-emerald-500"></i>
-              <span>${t.title} (${t.subject})</span>
+            <div class="flex items-center gap-1.5">
+              <button onclick="toggleComplete(${t.id})" class="text-emerald-400 hover:text-emerald-300 p-1 text-xs" title="Complete"><i class="fa-solid fa-check"></i></button>
+              <button onclick="deleteTask(${t.id})" class="text-rose-400 hover:text-rose-300 p-1 text-xs" title="Delete"><i class="fa-solid fa-trash"></i></button>
             </div>
-            <button onclick="toggleComplete(${t.id})" class="text-xs text-slate-400 hover:text-white underline">Reopen</button>
           </div>
-        `).join('');
-      }
+          
+          <div class="text-[11px] text-slate-400 flex flex-wrap items-center justify-between pt-1 gap-1 border-t border-slate-800">
+            <span><i class="fa-solid fa-book-open text-slate-500 mr-1"></i>${t.subject}</span>
+            <span class="font-semibold text-slate-200">${t.remaining_days}</span>
+          </div>
+          <p class="text-[10px] text-indigo-300/80 italic pt-0.5 leading-snug"><i class="fa-solid fa-brain mr-1"></i>${t.reason || 'AI Evaluated'}</p>
+        </div>
+      `;
+
+      // Quadrant 1
+      q1.innerHTML = q1Tasks.length ? q1Tasks.map(t => cardHTML(t, 'border-rose-800/80 hover:border-rose-600')).join('') 
+                                    : '<div class="text-[11px] text-slate-600 italic py-6 text-center">No urgent/overdue tasks</div>';
+
+      // Quadrant 2
+      q2.innerHTML = q2Tasks.length ? q2Tasks.map(t => cardHTML(t, 'border-amber-800/80 hover:border-amber-600')).join('') 
+                                    : '<div class="text-[11px] text-slate-600 italic py-6 text-center">No medium priority tasks</div>';
+
+      // Quadrant 3
+      q3.innerHTML = q3Tasks.length ? q3Tasks.map(t => cardHTML(t, 'border-emerald-800/80 hover:border-emerald-600')).join('') 
+                                    : '<div class="text-[11px] text-slate-600 italic py-6 text-center">No low priority tasks</div>';
+
+      // Quadrant 4 (Completed)
+      q4.innerHTML = completed.length ? completed.map(t => `
+        <div class="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 flex items-center justify-between text-xs text-slate-500">
+          <span class="line-through">${t.title} (${t.subject})</span>
+          <button onclick="toggleComplete(${t.id})" class="text-[10px] text-slate-400 hover:text-white underline">Reopen</button>
+        </div>
+      `).join('') : '<div class="text-[11px] text-slate-600 italic py-6 text-center">No completed tasks yet</div>';
     }
 
-    // 1-Day & 2-Day Popup / Notification Trigger
+    // Urgent Alerts Handler
     function checkAndTriggerUrgentPopups(activeTasks) {
       const urgent1Day = activeTasks.filter(t => t.days_left === 1 || t.days_left === 0);
       const urgent2Day = activeTasks.filter(t => t.days_left === 2);
@@ -286,10 +308,9 @@
         alertBar.classList.remove('hidden');
         alertText.innerText = `CRITICAL ALERT: '${t.title}' (${t.subject}) is due ${t.days_left === 0 ? 'TODAY' : 'TOMORROW'}!`;
 
-        // Native System Notification
         if (Notification.permission === 'granted') {
           new Notification(`⚠️ Submission Due ${t.days_left === 0 ? 'Today' : 'Tomorrow'}!`, {
-            body: `'${t.title}' for ${t.subject} is approaching its deadline. Complete it now!`,
+            body: `'${t.title}' for ${t.subject} is approaching its deadline. Submit now!`,
             icon: 'https://cdn-icons-png.flaticon.com/512/2997/2997295.png'
           });
         }
@@ -297,13 +318,6 @@
         const t = urgent2Day[0];
         alertBar.classList.remove('hidden');
         alertText.innerText = `REMINDER: '${t.title}' (${t.subject}) is due in 2 days.`;
-
-        if (Notification.permission === 'granted') {
-          new Notification(`🔔 2 Days Remaining: ${t.title}`, {
-            body: `You have 2 days left to complete '${t.title}' for ${t.subject}.`,
-            icon: 'https://cdn-icons-png.flaticon.com/512/2997/2997295.png'
-          });
-        }
       }
     }
 
@@ -311,7 +325,6 @@
       document.getElementById('notificationAlertBar').classList.add('hidden');
     }
 
-    // Device Push / Notification Registration
     async function enableDeviceNotifications() {
       if (!('Notification' in window)) {
         alert('This browser does not support desktop notifications.');
@@ -319,14 +332,11 @@
       }
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        alert('Lock-screen and browser notifications enabled successfully!');
+        alert('Lock-screen notifications enabled!');
         loadTasks();
-      } else {
-        alert('Notification permission was not granted.');
       }
     }
 
-    // Add Task
     async function handleAddTask(e) {
       e.preventDefault();
       const title = document.getElementById('taskTitle').value.trim();
@@ -334,22 +344,18 @@
       const category = document.getElementById('taskCategory').value;
       const deadline = document.getElementById('taskDeadline').value;
 
-      if (!title || !subject || !deadline) {
-        alert('Please fill in all task details.');
-        return;
-      }
+      if (!title || !subject || !deadline) return;
 
       const btn = document.getElementById('addTaskBtn');
       btn.disabled = true;
       btn.innerText = 'Evaluating with Gemini...';
 
       try {
-        const res = await fetch('/api/tasks', {
+        await fetch('/api/tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title, subject, category, deadline })
         });
-        const data = await res.json();
         document.getElementById('taskTitle').value = '';
         document.getElementById('taskSubject').value = '';
         document.getElementById('taskDeadline').value = '';
@@ -362,31 +368,17 @@
       }
     }
 
-    // Change Deadline
-    async function changeDeadline(taskId, newDeadline) {
-      if (!newDeadline) return;
-      await fetch(`/api/tasks/${taskId}/deadline`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deadline: newDeadline })
-      });
-      loadTasks();
-    }
-
-    // Toggle Complete
     async function toggleComplete(taskId) {
       await fetch(`/api/tasks/${taskId}/toggle-complete`, { method: 'PUT' });
       loadTasks();
     }
 
-    // Delete Task
     async function deleteTask(taskId) {
       if (!confirm('Are you sure you want to delete this task?')) return;
       await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
       loadTasks();
     }
 
-    // Ask Gemini AI
     async function askGemini() {
       const prompt = document.getElementById('aiPrompt').value.trim();
       if (!prompt) return;
