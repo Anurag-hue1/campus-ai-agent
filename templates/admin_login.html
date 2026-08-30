@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus AI Agent - Admin Sign In</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-md bg-slate-900/90 border border-amber-900/40 rounded-3xl p-8 shadow-2xl space-y-6">
+    
+    <div class="text-center space-y-2">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-600 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/30">
+        <i class="fa-solid fa-shield-halved text-white text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-white tracking-tight">Admin Portal</h1>
+      <p class="text-xs text-amber-400 font-medium">Restricted Administrative Access</p>
+    </div>
+
+    <!-- Alert Box -->
+    <div id="adminAlert" class="hidden text-xs px-4 py-3 rounded-xl border flex items-center gap-2">
+      <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+      <span id="adminAlertText"></span>
+    </div>
+
+    <!-- Admin Login Form -->
+    <form onsubmit="handleAdminLogin(event)" class="space-y-4" novalidate>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Admin Email <span class="text-rose-400">*</span></label>
+        <div class="relative">
+          <i class="fa-solid fa-envelope absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+          <input type="email" id="adminEmail" value="admin@campus.edu" placeholder="admin@campus.edu" 
+                 class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Admin Password <span class="text-rose-400">*</span></label>
+        <div class="relative">
+          <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+          <input type="password" id="adminPassword" placeholder="••••••••" 
+                 class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition" />
+        </div>
+      </div>
+
+      <button type="submit" id="adminLoginBtn" class="w-full bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white text-xs font-bold py-3 rounded-xl transition shadow-lg shadow-amber-600/30">
+        Authenticate as Administrator
+      </button>
+
+      <div class="text-center pt-2">
+        <a href="/auth" class="text-xs text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-arrow-left text-[10px]"></i>
+          <span>Switch to Student Login</span>
+        </a>
+      </div>
+    </form>
+
+  </div>
+
+  <script>
+    function showAlert(msg) {
+      const box = document.getElementById('adminAlert');
+      const text = document.getElementById('adminAlertText');
+      box.classList.remove('hidden');
+      box.className = 'text-xs px-4 py-2.5 rounded-xl border bg-rose-950/60 border-rose-800 text-rose-300 flex items-center gap-2';
+      text.innerText = msg;
+    }
+
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = document.getElementById('adminPassword').value.trim();
+      const btn = document.getElementById('adminLoginBtn');
+
+      if (!email || !password) {
+        showAlert('Please provide both admin email and password.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Verifying Security Clearance...';
+
+      try {
+        const res = await fetch('/api/auth/admin-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.error) {
+          showAlert(data.error);
+        } else {
+          window.location.href = data.redirect;
+        }
+      } catch (err) {
+        showAlert('Authentication error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Authenticate as Administrator';
+      }
+    }
+  </script>
+</body>
+</html>

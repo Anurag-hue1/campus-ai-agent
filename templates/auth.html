@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus AI Agent - Authentication</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
+    
+    <!-- Header Badge -->
+    <div class="text-center space-y-2">
+      <div id="portalIcon" class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/30 transition-all">
+        <i id="portalIconFa" class="fa-solid fa-graduation-cap text-white text-2xl"></i>
+      </div>
+      <h1 id="portalTitle" class="text-2xl font-bold text-white tracking-tight">Campus AI Agent</h1>
+      <p id="portalSub" class="text-xs text-slate-400">Autonomous Task & Academic Prioritizer</p>
+    </div>
+
+    <!-- Navigation Tabs Toggle -->
+    <div id="tabContainer" class="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+      <button id="tabLogin" onclick="showTab('login')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-indigo-600 text-white transition">Sign In</button>
+      <button id="tabRegister" onclick="showTab('register')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition">Create Account</button>
+    </div>
+
+    <!-- Dynamic Error / Success Alert Box -->
+    <div id="authAlert" class="hidden text-xs px-4 py-3 rounded-xl border flex items-center gap-2">
+      <i id="authAlertIcon" class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+      <span id="authAlertText"></span>
+    </div>
+
+    <!-- 1. Email Login Form -->
+    <form id="loginForm" onsubmit="handleEmailLogin(event)" class="space-y-4" novalidate>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Email Address <span class="text-rose-400">*</span></label>
+        <div class="relative">
+          <i class="fa-solid fa-envelope absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+          <input type="email" id="loginEmail" placeholder="student@campus.edu" 
+                 class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between items-center mb-1">
+          <label class="text-xs font-medium text-slate-400">Password <span class="text-rose-400">*</span></label>
+          <button type="button" onclick="showTab('forgot')" class="text-xs text-indigo-400 hover:text-indigo-300 transition font-medium">Forgot Password?</button>
+        </div>
+        <div class="relative">
+          <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+          <input type="password" id="loginPassword" placeholder="••••••••" 
+                 class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+      </div>
+      <button type="submit" id="loginBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
+        Sign In to Dashboard
+      </button>
+
+      <!-- Admin Direct Switcher -->
+      <div class="text-center pt-2 border-t border-slate-800/80">
+        <button type="button" onclick="switchToAdminLogin()" id="adminToggleBtn" class="text-xs text-amber-400 hover:text-amber-300 transition font-medium flex items-center justify-center gap-1.5 mx-auto">
+          <i class="fa-solid fa-shield-halved text-[11px]"></i>
+          <span id="adminToggleText">Go to Admin Portal</span>
+        </button>
+      </div>
+    </form>
+
+    <!-- 2. Email Register Form -->
+    <form id="registerForm" onsubmit="handleEmailRegister(event)" class="space-y-4 hidden" novalidate>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Full Name <span class="text-rose-400">*</span></label>
+        <div class="relative">
+          <i class="fa-solid fa-id-card absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+          <input type="text" id="regFullName" placeholder="e.g., Alex Johnson" 
+                 class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Email Address <span class="text-rose-400">*</span></label>
+        <div class="relative">
+          <i class="fa-solid fa-envelope absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+          <input type="email" id="regEmail" placeholder="e.g., student@campus.edu" 
+                 class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Create Password <span class="text-rose-400">*</span></label>
+        <div class="relative">
+          <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+          <input type="password" id="regPassword" placeholder="Minimum 6 characters" 
+                 class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+      </div>
+      <button type="submit" id="registerBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-600/30">
+        Create My Student Account
+      </button>
+    </form>
+
+    <!-- 3. Forgot Password Form (OTP Verification & Reset) -->
+    <div id="forgotPasswordSection" class="space-y-4 hidden">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h2 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-key"></i> Reset Password
+        </h2>
+        <button onclick="showTab('login')" class="text-xs text-slate-400 hover:text-white transition">
+          <i class="fa-solid fa-arrow-left mr-1"></i> Back to Sign In
+        </button>
+      </div>
+
+      <!-- Step 1: Send OTP -->
+      <div id="forgotStep1" class="space-y-3">
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Enter your registered email address. We will verify your account and send a 6-digit OTP code.
+        </p>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Registered Email <span class="text-rose-400">*</span></label>
+          <div class="relative">
+            <i class="fa-solid fa-envelope absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+            <input type="email" id="forgotEmail" placeholder="student@campus.edu" 
+                   class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition" />
+          </div>
+        </div>
+        <button onclick="requestPasswordOtp()" id="sendOtpBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-lg">
+          Send OTP Code
+        </button>
+      </div>
+
+      <!-- Step 2: Enter OTP & New Password -->
+      <div id="forgotStep2" class="space-y-3 hidden">
+        <div class="bg-indigo-950/40 border border-indigo-800/60 p-3 rounded-xl text-xs text-indigo-300">
+          <span class="font-bold">OTP Dispatched:</span> Enter the 6-digit code to verify your identity.
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">6-Digit OTP Code <span class="text-rose-400">*</span></label>
+          <input type="text" id="otpInput" maxlength="6" placeholder="e.g., 482910" 
+                 class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-center text-white tracking-widest font-mono font-bold focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">New Password <span class="text-rose-400">*</span></label>
+          <input type="password" id="newPasswordInput" placeholder="Minimum 6 characters" 
+                 class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+        <button onclick="submitPasswordReset()" id="resetPasswordBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-lg">
+          Verify OTP & Update Password
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let isAdminMode = false;
+
+    function switchToAdminLogin() {
+      isAdminMode = !isAdminMode;
+      const portalIcon = document.getElementById('portalIcon');
+      const portalIconFa = document.getElementById('portalIconFa');
+      const portalTitle = document.getElementById('portalTitle');
+      const portalSub = document.getElementById('portalSub');
+      const loginBtn = document.getElementById('loginBtn');
+      const emailInput = document.getElementById('loginEmail');
+      const passwordInput = document.getElementById('loginPassword');
+      const adminToggleText = document.getElementById('adminToggleText');
+      const tabContainer = document.getElementById('tabContainer');
+
+      hideAlert();
+      clearFieldErrors();
+
+      if (isAdminMode) {
+        portalIcon.className = 'w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-600 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/30 transition-all';
+        portalIconFa.className = 'fa-solid fa-shield-halved text-white text-2xl';
+        portalTitle.innerText = 'Admin Portal';
+        portalSub.innerText = 'Restricted Administrator Control Access';
+        loginBtn.className = 'w-full bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white text-xs font-bold py-3 rounded-xl transition shadow-lg shadow-amber-600/30';
+        loginBtn.innerText = 'Authenticate as Administrator';
+        
+        // Auto-fills your updated admin email
+        emailInput.value = 'anniadmin@gmail.com';
+        passwordInput.value = '';
+        adminToggleText.innerText = 'Switch to Student Login';
+        tabContainer.classList.add('hidden');
+      } else {
+        portalIcon.className = 'w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/30 transition-all';
+        portalIconFa.className = 'fa-solid fa-graduation-cap text-white text-2xl';
+        portalTitle.innerText = 'Campus AI Agent';
+        portalSub.innerText = 'Autonomous Task & Academic Prioritizer';
+        loginBtn.className = 'w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30';
+        loginBtn.innerText = 'Sign In to Dashboard';
+        emailInput.value = '';
+        passwordInput.value = '';
+        adminToggleText.innerText = 'Go to Admin Portal';
+        tabContainer.classList.remove('hidden');
+      }
+    }
+
+    function showTab(tab) {
+      if (isAdminMode) switchToAdminLogin();
+
+      const loginForm = document.getElementById('loginForm');
+      const regForm = document.getElementById('registerForm');
+      const forgotSection = document.getElementById('forgotPasswordSection');
+      const tabContainer = document.getElementById('tabContainer');
+      const tabLogin = document.getElementById('tabLogin');
+      const tabReg = document.getElementById('tabRegister');
+      
+      hideAlert();
+      clearFieldErrors();
+
+      if (tab === 'login') {
+        tabContainer.classList.remove('hidden');
+        loginForm.classList.remove('hidden');
+        regForm.classList.add('hidden');
+        forgotSection.classList.add('hidden');
+        tabLogin.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-indigo-600 text-white transition';
+        tabReg.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition';
+      } else if (tab === 'register') {
+        tabContainer.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+        regForm.classList.remove('hidden');
+        forgotSection.classList.add('hidden');
+        tabReg.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white transition';
+        tabLogin.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition';
+      } else if (tab === 'forgot') {
+        tabContainer.classList.add('hidden');
+        loginForm.classList.add('hidden');
+        regForm.classList.add('hidden');
+        forgotSection.classList.remove('hidden');
+        document.getElementById('forgotStep1').classList.remove('hidden');
+        document.getElementById('forgotStep2').classList.add('hidden');
+      }
+    }
+
+    function showAlert(msg, isError = true) {
+      const box = document.getElementById('authAlert');
+      const text = document.getElementById('authAlertText');
+      const icon = document.getElementById('authAlertIcon');
+      box.classList.remove('hidden');
+      text.innerText = msg;
+
+      if (isError) {
+        box.className = 'text-xs px-4 py-2.5 rounded-xl border bg-rose-950/60 border-rose-800 text-rose-300 flex items-center gap-2';
+        icon.className = 'fa-solid fa-circle-exclamation flex-shrink-0';
+      } else {
+        box.className = 'text-xs px-4 py-2.5 rounded-xl border bg-emerald-950/60 border-emerald-800 text-emerald-300 flex items-center gap-2';
+        icon.className = 'fa-solid fa-circle-check flex-shrink-0';
+      }
+    }
+
+    function hideAlert() {
+      document.getElementById('authAlert').classList.add('hidden');
+    }
+
+    function markInputError(inputId) {
+      const el = document.getElementById(inputId);
+      if (el) {
+        el.classList.add('border-rose-500', 'focus:border-rose-500');
+        el.classList.remove('border-slate-700', 'focus:border-indigo-500');
+      }
+    }
+
+    function clearFieldErrors() {
+      ['loginEmail', 'loginPassword', 'regFullName', 'regEmail', 'regPassword', 'forgotEmail', 'otpInput', 'newPasswordInput'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.remove('border-rose-500', 'focus:border-rose-500');
+          el.classList.add('border-slate-700', 'focus:border-indigo-500');
+        }
+      });
+    }
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    // 1. Handle Login
+    async function handleEmailLogin(e) {
+      e.preventDefault();
+      clearFieldErrors();
+      hideAlert();
+
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+
+      if (!email) {
+        markInputError('loginEmail');
+        showAlert('Please enter your Email Address.', true);
+        return;
+      }
+      if (!isValidEmail(email)) {
+        markInputError('loginEmail');
+        showAlert('Please enter a valid Email Address.', true);
+        return;
+      }
+      if (!password) {
+        markInputError('loginPassword');
+        showAlert('Please enter your Password.', true);
+        return;
+      }
+
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.innerText = 'Authenticating...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.error) {
+          showAlert(data.error, true);
+        } else {
+          window.location.href = data.redirect;
+        }
+      } catch (err) {
+        showAlert('Login error: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = isAdminMode ? 'Authenticate as Administrator' : 'Sign In to Dashboard';
+      }
+    }
+
+    // 2. Handle Registration
+    async function handleEmailRegister(e) {
+      e.preventDefault();
+      clearFieldErrors();
+      hideAlert();
+
+      const full_name = document.getElementById('regFullName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value.trim();
+
+      if (!full_name) {
+        markInputError('regFullName');
+        showAlert('Please enter your Full Name.', true);
+        return;
+      }
+      if (!email) {
+        markInputError('regEmail');
+        showAlert('Please enter your Email Address.', true);
+        return;
+      }
+      if (!isValidEmail(email)) {
+        markInputError('regEmail');
+        showAlert('Please enter a valid Email Address.', true);
+        return;
+      }
+      if (!password) {
+        markInputError('regPassword');
+        showAlert('Please create a Password.', true);
+        return;
+      }
+      if (password.length < 6) {
+        markInputError('regPassword');
+        showAlert('Password must be at least 6 characters long.', true);
+        return;
+      }
+
+      const btn = document.getElementById('registerBtn');
+      btn.disabled = true;
+      btn.innerText = 'Creating Account...';
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ full_name, email, password })
+        });
+        const data = await res.json();
+        if (data.error) {
+          showAlert(data.error, true);
+        } else {
+          window.location.href = data.redirect;
+        }
+      } catch (err) {
+        showAlert('Registration error: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Create My Student Account';
+      }
+    }
+
+    // 3. Forgot Password: Send OTP
+    async function requestPasswordOtp() {
+      clearFieldErrors();
+      hideAlert();
+
+      const email = document.getElementById('forgotEmail').value.trim();
+
+      if (!email) {
+        markInputError('forgotEmail');
+        showAlert('Please enter your Registered Email Address.', true);
+        return;
+      }
+      if (!isValidEmail(email)) {
+        markInputError('forgotEmail');
+        showAlert('Please enter a valid Email Address.', true);
+        return;
+      }
+
+      const btn = document.getElementById('sendOtpBtn');
+      btn.disabled = true;
+      btn.innerText = 'Verifying & Sending OTP...';
+
+      try {
+        const res = await fetch('/api/auth/forgot-password/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          showAlert(data.error, true);
+        } else {
+          showAlert(`OTP Code: [ ${data.demo_otp} ] has been dispatched to ${email}.`, false);
+          document.getElementById('forgotStep1').classList.add('hidden');
+          document.getElementById('forgotStep2').classList.remove('hidden');
+        }
+      } catch (err) {
+        showAlert('OTP Request Failed: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Send OTP Code';
+      }
+    }
+
+    // 4. Forgot Password: Verify & Reset
+    async function submitPasswordReset() {
+      clearFieldErrors();
+      hideAlert();
+
+      const email = document.getElementById('forgotEmail').value.trim();
+      const otp = document.getElementById('otpInput').value.trim();
+      const new_password = document.getElementById('newPasswordInput').value.trim();
+
+      if (!otp || otp.length !== 6) {
+        markInputError('otpInput');
+        showAlert('Please enter the 6-digit OTP code sent to your email.', true);
+        return;
+      }
+      if (!new_password || new_password.length < 6) {
+        markInputError('newPasswordInput');
+        showAlert('New password must be at least 6 characters long.', true);
+        return;
+      }
+
+      const btn = document.getElementById('resetPasswordBtn');
+      btn.disabled = true;
+      btn.innerText = 'Updating Password...';
+
+      try {
+        const res = await fetch('/api/auth/forgot-password/verify-and-reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp, new_password })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          showAlert(data.error, true);
+        } else {
+          showTab('login');
+          document.getElementById('loginEmail').value = email;
+          showAlert('Password changed successfully! Please sign in with your new password.', false);
+        }
+      } catch (err) {
+        showAlert('Reset error: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Verify OTP & Update Password';
+      }
+    }
+  </script>
+</body>
+</html>
