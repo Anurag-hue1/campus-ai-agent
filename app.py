@@ -1,6 +1,5 @@
 import os
 import json
-import random
 import sqlite3
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -15,9 +14,6 @@ CORS(app)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 DB_NAME = "campus.db"
 
-# Temporary OTP Store
-otp_storage = {}
-
 def get_db():
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
@@ -28,7 +24,7 @@ def init_db():
         cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                email TEXT PRIMARY KEY,
+                user_id TEXT PRIMARY KEY,
                 password TEXT NOT NULL,
                 full_name TEXT NOT NULL,
                 role TEXT NOT NULL,
@@ -38,7 +34,7 @@ def init_db():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_email TEXT NOT NULL,
+                user_id TEXT NOT NULL,
                 title TEXT NOT NULL,
                 subject TEXT NOT NULL,
                 category TEXT NOT NULL,
@@ -46,44 +42,42 @@ def init_db():
                 priority TEXT NOT NULL,
                 completed INTEGER NOT NULL DEFAULT 0,
                 reason TEXT,
-                FOREIGN KEY (user_email) REFERENCES users (email)
+                FOREIGN KEY (user_id) REFERENCES users (user_id)
             )
         ''')
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS push_subscriptions (
-                user_email TEXT PRIMARY KEY,
+                user_id TEXT PRIMARY KEY,
                 subscription_json TEXT NOT NULL
             )
         ''')
-        # Seed Master Admin
-        cursor.execute("SELECT * FROM users WHERE email = 'anniadmin@gmail.com'")
+        # Seed Default Administrator
+        cursor.execute("SELECT * FROM users WHERE user_id = 'admin'")
         if not cursor.fetchone():
             cursor.execute('''
-                INSERT INTO users (email, password, full_name, role, joined_at)
+                INSERT INTO users (user_id, password, full_name, role, joined_at)
                 VALUES (?, ?, ?, ?, ?)
-            ''', ('anniadmin@gmail.com', 'anni@225462', 'System Owner & Admin', 'admin', '2026-08-01 10:00:00'))
+            ''', ('admin', 'admin@123', 'System Administrator', 'admin', '2026-08-31 00:00:00'))
         conn.commit()
 
 init_db()
 
 def get_realtime_today():
-    """Always returns current date in Indian Standard Time (IST)."""
     try:
         ist_now = datetime.now(ZoneInfo("Asia/Kolkata"))
         return ist_now.strftime("%Y-%m-%d")
     except Exception:
-        # Fallback if ZoneInfo is unavailable
         utc_now = datetime.utcnow()
         ist_now = utc_now + timedelta(hours=5, minutes=30)
         return ist_now.strftime("%Y-%m-%d")
 
 def get_current_user():
-    email = session.get("user_email")
-    if not email:
+    user_id = session.get("user_id")
+    if not user_id:
         return None
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+        cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
         row = cursor.fetchone()
         return dict(row) if row else None
 
@@ -172,7 +166,7 @@ def run_gemini_global_evaluation(user_tasks, curr_date_val):
                                        (item["priority"], item["reason"], item["id"]))
             conn.commit()
     except Exception as e:
-        print("Gemini API Error, falling back to local heuristic:", e)
+        print("Gemini API Error, using heuristic:", e)
         fallback_evaluate_all(user_tasks, curr_date_val)
 
 def calculate_schedule(user_tasks):
@@ -250,47 +244,53 @@ def admin_page():
 @app.route("/api/auth/register", methods=["POST"])
 def register():
     data = request.json
-    email = data.get("email", "").strip().lower()
+    user_id = data.get("user_id", "").strip().lower()
     password = data.get("password", "").strip()
     full_name = data.get("full_name", "").strip()
 
-    if not email or not password or not full_name:
+    if not user_id or not password or not full_name:
         return jsonify({"error": "All fields are required."}), 400
+
+    if len(user_id) < 3:
+        return jsonify({"error": "User ID / Roll Number must be at least 3 characters."}), 400
+
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters long."}), 400
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT email FROM users WHERE email = ?", (email,))
+        cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
         if cursor.fetchone():
-            return jsonify({"error": "An account with this email already exists. Please sign in."}), 400
+            return jsonify({"error": "This User ID is already taken. Please choose another."}), 400
 
         cursor.execute('''
-            INSERT INTO users (email, password, full_name, role, joined_at)
+            INSERT INTO users (user_id, password, full_name, role, joined_at)
             VALUES (?, ?, ?, 'student', ?)
-        ''', (email, password, full_name, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        ''', (user_id, password, full_name, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()
 
-    session["user_email"] = email
+    session["user_id"] = user_id
     return jsonify({"success": True, "redirect": "/"})
 
 @app.route("/api/auth/login", methods=["POST"])
 def login():
     data = request.json
-    email = data.get("email", "").strip().lower()
+    user_id = data.get("user_id", "").strip().lower()
     password = data.get("password", "").strip()
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+        cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
         user = cursor.fetchone()
 
     if not user:
-        return jsonify({"error": "User is not available. Please create an account first."}), 404
+        return jsonify({"error": "User ID not found. Please create an account first."}), 404
 
     user = dict(user)
     if user["password"] != password:
-        return jsonify({"error": "Incorrect password. Please check your password."}), 401
+        return jsonify({"error": "Incorrect password. Please try again."}), 401
 
-    session["user_email"] = email
+    session["user_id"] = user_id
     return jsonify({
         "success": True, 
         "redirect": "/admin" if user["role"] == "admin" else "/"
@@ -298,79 +298,10 @@ def login():
 
 @app.route("/api/auth/logout", methods=["POST"])
 def logout():
-    session.pop("user_email", None)
+    session.pop("user_id", None)
     return jsonify({"success": True})
 
-# --- Forgot Password & OTP APIs ---
-@app.route("/api/auth/forgot-password/send-otp", methods=["POST"])
-def send_otp():
-    data = request.json
-    email = data.get("email", "").strip().lower()
-
-    if not email:
-        return jsonify({"error": "Please enter your registered email address."}), 400
-
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT role FROM users WHERE email = ?", (email,))
-        user = cursor.fetchone()
-
-    if not user:
-        return jsonify({"error": "User is not available with this email address. Please create an account."}), 404
-
-    if user["role"] == "admin":
-        return jsonify({"error": "Admin password cannot be reset via public OTP. Change it inside Admin Portal."}), 403
-
-    otp = f"{random.randint(100000, 999999)}"
-    otp_storage[email] = {
-        "otp": otp,
-        "expires_at": datetime.now() + timedelta(minutes=10)
-    }
-
-    return jsonify({
-        "success": True,
-        "message": f"OTP sent successfully to {email}.",
-        "demo_otp": otp
-    })
-
-@app.route("/api/auth/forgot-password/verify-and-reset", methods=["POST"])
-def verify_and_reset():
-    data = request.json
-    email = data.get("email", "").strip().lower()
-    otp_entered = data.get("otp", "").strip()
-    new_password = data.get("new_password", "").strip()
-
-    if not email or not otp_entered or not new_password:
-        return jsonify({"error": "All fields are required."}), 400
-
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT role FROM users WHERE email = ?", (email,))
-        user = cursor.fetchone()
-
-    if not user or user["role"] == "admin":
-        return jsonify({"error": "Unauthorized operation."}), 403
-
-    saved_otp = otp_storage.get(email)
-    if not saved_otp or datetime.now() > saved_otp["expires_at"]:
-        otp_storage.pop(email, None)
-        return jsonify({"error": "OTP has expired. Please request a new OTP."}), 400
-
-    if saved_otp["otp"] != otp_entered:
-        return jsonify({"error": "Invalid OTP entered."}), 400
-
-    if len(new_password) < 6:
-        return jsonify({"error": "New password must be at least 6 characters."}), 400
-
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("UPDATE users SET password = ? WHERE email = ?", (new_password, email))
-        conn.commit()
-
-    otp_storage.pop(email, None)
-    return jsonify({"success": True, "message": "Password reset successfully!"})
-
-# --- Notification Push Subscription ---
+# --- Push Notification Subscription ---
 @app.route("/api/notifications/subscribe", methods=["POST"])
 def subscribe_push():
     user = get_current_user()
@@ -380,8 +311,8 @@ def subscribe_push():
     sub_data = request.json
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("INSERT OR REPLACE INTO push_subscriptions (user_email, subscription_json) VALUES (?, ?)", 
-                       (user["email"], json.dumps(sub_data)))
+        cursor.execute("INSERT OR REPLACE INTO push_subscriptions (user_id, subscription_json) VALUES (?, ?)", 
+                       (user["user_id"], json.dumps(sub_data)))
         conn.commit()
     return jsonify({"success": True})
 
@@ -402,11 +333,11 @@ def get_all_users():
 
     user_list = []
     for u in all_users:
-        u_tasks = [t for t in all_tasks if t["user_email"] == u["email"]]
+        u_tasks = [t for t in all_tasks if t["user_id"] == u["user_id"]]
         total_tasks = len(u_tasks)
         completed_tasks = len([t for t in u_tasks if t["completed"]])
         user_list.append({
-            "email": u["email"],
+            "user_id": u["user_id"],
             "full_name": u["full_name"],
             "role": u["role"],
             "joined_at": u["joined_at"],
@@ -423,26 +354,26 @@ def update_admin_credentials():
         return jsonify({"error": "Unauthorized"}), 403
 
     data = request.json
-    new_email = data.get("new_email", "").strip().lower()
+    new_user_id = data.get("new_user_id", "").strip().lower()
     new_password = data.get("new_password", "").strip()
     current_password = data.get("current_password", "").strip()
 
     if current_password != user["password"]:
         return jsonify({"error": "Current admin password verification failed."}), 401
 
-    if not new_email or not new_password or len(new_password) < 6:
-        return jsonify({"error": "Valid new email and password (min 6 characters) required."}), 400
+    if not new_user_id or not new_password or len(new_password) < 6:
+        return jsonify({"error": "Valid new User ID and password (min 6 characters) required."}), 400
 
-    old_email = user["email"]
+    old_user_id = user["user_id"]
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("UPDATE users SET email = ?, password = ? WHERE email = ?", 
-                       (new_email, new_password, old_email))
-        cursor.execute("UPDATE tasks SET user_email = ? WHERE user_email = ?", 
-                       (new_email, old_email))
+        cursor.execute("UPDATE users SET user_id = ?, password = ? WHERE user_id = ?", 
+                       (new_user_id, new_password, old_user_id))
+        cursor.execute("UPDATE tasks SET user_id = ? WHERE user_id = ?", 
+                       (new_user_id, old_user_id))
         conn.commit()
 
-    session["user_email"] = new_email
+    session["user_id"] = new_user_id
     return jsonify({"success": True, "message": "Admin credentials successfully updated."})
 
 # --- Task APIs ---
@@ -454,7 +385,7 @@ def get_tasks():
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM tasks WHERE user_email = ?", (user["email"],))
+        cursor.execute("SELECT * FROM tasks WHERE user_id = ?", (user["user_id"],))
         user_tasks = [dict(row) for row in cursor.fetchall()]
 
     curr_date = get_realtime_today()
@@ -469,7 +400,7 @@ def get_tasks():
         "current_date": curr_date,
         "user": {
             "full_name": user["full_name"],
-            "email": user["email"],
+            "user_id": user["user_id"],
             "role": user["role"]
         }
     })
@@ -486,12 +417,12 @@ def add_task():
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute('''
-            INSERT INTO tasks (user_email, title, subject, category, deadline, priority, completed, reason)
+            INSERT INTO tasks (user_id, title, subject, category, deadline, priority, completed, reason)
             VALUES (?, ?, ?, ?, ?, 'Medium', 0, 'Evaluating with Gemini...')
-        ''', (user["email"], data.get("title"), data.get("subject"), data.get("category", "Assignment"), data.get("deadline")))
+        ''', (user["user_id"], data.get("title"), data.get("subject"), data.get("category", "Assignment"), data.get("deadline")))
         conn.commit()
         
-        cursor.execute("SELECT * FROM tasks WHERE user_email = ?", (user["email"],))
+        cursor.execute("SELECT * FROM tasks WHERE user_id = ?", (user["user_id"],))
         user_tasks = [dict(row) for row in cursor.fetchall()]
 
     run_gemini_global_evaluation(user_tasks, curr_date)
@@ -516,10 +447,10 @@ def update_deadline(task_id):
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("UPDATE tasks SET deadline = ? WHERE id = ? AND user_email = ?", 
-                       (new_deadline, task_id, user["email"]))
+        cursor.execute("UPDATE tasks SET deadline = ? WHERE id = ? AND user_id = ?", 
+                       (new_deadline, task_id, user["user_id"]))
         conn.commit()
-        cursor.execute("SELECT * FROM tasks WHERE user_email = ?", (user["email"],))
+        cursor.execute("SELECT * FROM tasks WHERE user_id = ?", (user["user_id"],))
         user_tasks = [dict(row) for row in cursor.fetchall()]
 
     run_gemini_global_evaluation(user_tasks, curr_date)
@@ -540,10 +471,10 @@ def toggle_complete(task_id):
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("UPDATE tasks SET completed = 1 - completed WHERE id = ? AND user_email = ?", 
-                       (task_id, user["email"]))
+        cursor.execute("UPDATE tasks SET completed = 1 - completed WHERE id = ? AND user_id = ?", 
+                       (task_id, user["user_id"]))
         conn.commit()
-        cursor.execute("SELECT * FROM tasks WHERE user_email = ?", (user["email"],))
+        cursor.execute("SELECT * FROM tasks WHERE user_id = ?", (user["user_id"],))
         user_tasks = [dict(row) for row in cursor.fetchall()]
             
     active, completed, alerts, _ = calculate_schedule(user_tasks)
@@ -563,7 +494,7 @@ def delete_task(task_id):
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM tasks WHERE id = ? AND user_email = ?", (task_id, user["email"]))
+        cursor.execute("DELETE FROM tasks WHERE id = ? AND user_id = ?", (task_id, user["user_id"]))
         conn.commit()
 
     return jsonify({"success": True})
@@ -583,11 +514,11 @@ def call_gemini():
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM tasks WHERE user_email = ? AND completed = 0", (user["email"],))
+        cursor.execute("SELECT * FROM tasks WHERE user_id = ? AND completed = 0", (user["user_id"],))
         active_list = [dict(row) for row in cursor.fetchall()]
 
     client = genai.Client(api_key=GEMINI_API_KEY)
-    context = f"Student Name: {user['full_name']}. Active tasks: {active_list}. Current Date: {curr_date}."
+    context = f"Student Name: {user['full_name']} (User ID: {user['user_id']}). Active tasks: {active_list}. Current Date: {curr_date}."
     full_prompt = f"You are an academic advisor AI agent.\nContext: {context}\n\nStudent Query: {prompt}"
 
     try:
