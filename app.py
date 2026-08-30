@@ -3,6 +3,7 @@ import json
 import random
 import sqlite3
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
 from google import genai
@@ -54,7 +55,7 @@ def init_db():
                 subscription_json TEXT NOT NULL
             )
         ''')
-        # Seed Master Admin if not exists
+        # Seed Master Admin
         cursor.execute("SELECT * FROM users WHERE email = 'anniadmin@gmail.com'")
         if not cursor.fetchone():
             cursor.execute('''
@@ -66,7 +67,15 @@ def init_db():
 init_db()
 
 def get_realtime_today():
-    return datetime.now().strftime("%Y-%m-%d")
+    """Always returns current date in Indian Standard Time (IST)."""
+    try:
+        ist_now = datetime.now(ZoneInfo("Asia/Kolkata"))
+        return ist_now.strftime("%Y-%m-%d")
+    except Exception:
+        # Fallback if ZoneInfo is unavailable
+        utc_now = datetime.utcnow()
+        ist_now = utc_now + timedelta(hours=5, minutes=30)
+        return ist_now.strftime("%Y-%m-%d")
 
 def get_current_user():
     email = session.get("user_email")
@@ -191,7 +200,6 @@ def calculate_schedule(user_tasks):
 
         offset = 2 if t.get("priority") == "High" else 1
         rem_date = d_date - timedelta(days=offset)
-        r_diff = (rem_date - curr_dt).days
 
         if rem_days == 1:
             alerts.append(f"⚠️ Critical: '{t['title']}' is due TOMORROW!")
