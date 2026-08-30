@@ -14,7 +14,7 @@ CORS(app)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 DB_NAME = "campus.db"
 
-# Temporary OTP Store: { "email": {"otp": "123456", "expires_at": timestamp} }
+# Temporary OTP Store
 otp_storage = {}
 
 def get_db():
@@ -48,7 +48,13 @@ def init_db():
                 FOREIGN KEY (user_email) REFERENCES users (email)
             )
         ''')
-        # Seed Master Admin if not exists
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                user_email TEXT PRIMARY KEY,
+                subscription_json TEXT NOT NULL
+            )
+        ''')
+        # Seed Master Admin
         cursor.execute("SELECT * FROM users WHERE email = 'anniadmin@gmail.com'")
         if not cursor.fetchone():
             cursor.execute('''
@@ -176,10 +182,14 @@ def calculate_schedule(user_tasks):
         rem_date = d_date - timedelta(days=offset)
         r_diff = (rem_date - curr_dt).days
 
-        if r_diff < 0:
-            alerts.append(f"{t['title']}: Deadline is in {rem_days} day(s). Reminder date has passed.")
-        elif r_diff == 0:
-            alerts.append(f"{t['title']}: Reminder triggers today.")
+        if rem_days == 1:
+            alerts.append(f"⚠️ Critical: '{t['title']}' is due TOMORROW!")
+        elif rem_days == 2:
+            alerts.append(f"🔔 Reminder: '{t['title']}' deadline is in 2 days.")
+        elif rem_days == 0:
+            alerts.append(f"🚨 Urgent: '{t['title']}' is due TODAY!")
+        elif rem_days < 0:
+            alerts.append(f"⛔ Overdue: '{t['title']}' was due {abs(rem_days)} day(s) ago.")
 
         remaining_label = (
             f"{rem_days} day(s)" if rem_days > 0 
@@ -188,13 +198,14 @@ def calculate_schedule(user_tasks):
 
         processed_active.append({
             **t,
+            "days_left": rem_days,
             "remaining_days": remaining_label,
             "reminder_date": rem_date.strftime("%Y-%m-%d")
         })
 
     return processed_active, completed_tasks, alerts, curr_date_val
 
-# --- Routes ---
+# --- Page Routes ---
 @app.route("/")
 def home():
     user = get_current_user()
@@ -258,7 +269,7 @@ def login():
 
     user = dict(user)
     if user["password"] != password:
-        return jsonify({"error": "Incorrect password. Please check your password or use Forgot Password."}), 401
+        return jsonify({"error": "Incorrect password. Please check your password."}), 401
 
     session["user_email"] = email
     return jsonify({
@@ -289,7 +300,7 @@ def send_otp():
         return jsonify({"error": "User is not available with this email address. Please create an account."}), 404
 
     if user["role"] == "admin":
-        return jsonify({"error": "Admin password cannot be reset via public OTP. Change it inside the Admin Portal."}), 403
+        return jsonify({"error": "Admin password cannot be reset via public OTP. Change it inside Admin Portal."}), 403
 
     otp = f"{random.randint(100000, 999999)}"
     otp_storage[email] = {
@@ -339,6 +350,21 @@ def verify_and_reset():
 
     otp_storage.pop(email, None)
     return jsonify({"success": True, "message": "Password reset successfully!"})
+
+# --- Push Notification Subscription Endpoint ---
+@app.route("/api/notifications/subscribe", methods=["POST"])
+def subscribe_push():
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    sub_data = request.json
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("INSERT OR REPLACE INTO push_subscriptions (user_email, subscription_json) VALUES (?, ?)", 
+                       (user["email"], json.dumps(sub_data)))
+        conn.commit()
+    return jsonify({"success": True})
 
 # --- Admin APIs ---
 @app.route("/api/admin/users", methods=["GET"])
@@ -400,7 +426,7 @@ def update_admin_credentials():
     session["user_email"] = new_email
     return jsonify({"success": True, "message": "Admin credentials successfully updated."})
 
-# --- Task APIs (Per User) ---
+# --- Task APIs ---
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
     user = get_current_user()
