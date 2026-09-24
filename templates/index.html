@@ -4,96 +4,575 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Campus AI Agent - Academic Matrix</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-    body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    /* Custom sleek scrollbar for column containers */
-    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 10%, #1e1b4b 0%, #0b0f19 40%, #020617 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      padding-bottom: 5rem;
+    }
+
+    /* Scrollbars */
+    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); border-radius: 8px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 8px; }
     .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
+
+    /* Top Alert Bar */
+    #notificationAlertBar {
+      background: linear-gradient(90deg, #d97706, #e11d48);
+      color: #ffffff;
+      padding: 0.65rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+    #notificationAlertBar.hidden { display: none; }
+    .dismiss-btn {
+      margin-left: 1rem;
+      text-decoration: underline;
+      font-size: 0.75rem;
+      background: none;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      opacity: 0.85;
+    }
+    .dismiss-btn:hover { opacity: 1; }
+
+    /* Header / Navbar */
+    header {
+      background: rgba(15, 23, 42, 0.75);
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    .navbar-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0.9rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .brand-badge {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.75rem;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+    .brand-badge i { color: #ffffff; font-size: 1.1rem; }
+    .brand-title { font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2; }
+    .brand-user { font-size: 0.75rem; color: #94a3b8; }
+    .brand-user span { color: #818cf8; font-weight: 600; }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .date-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid #334155;
+      padding: 0.45rem 0.75rem;
+      border-radius: 0.75rem;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+    }
+    .date-badge span.bold { font-weight: 700; color: #ffffff; }
+
+    .btn-nav {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 0.45rem 0.85rem;
+      border-radius: 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-nav:hover { background: #334155; color: #ffffff; }
+    .btn-logout {
+      background: rgba(136, 19, 55, 0.3);
+      border-color: rgba(225, 29, 72, 0.5);
+      color: #fecdd3;
+    }
+    .btn-logout:hover { background: rgba(136, 19, 55, 0.6); color: #ffffff; }
+
+    /* Layout Container */
+    main {
+      max-width: 1280px;
+      margin: 2rem auto 0;
+      padding: 0 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Cards */
+    .card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
+    }
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    /* 3-Column Top Layout */
+    .top-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Form Styles */
+    .form-group { margin-bottom: 0.85rem; }
+    .form-label { display: block; font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.35rem; }
+    .form-label span.req { color: #f43f5e; }
+    .form-input, .form-select {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 0.75rem;
+      padding: 0.55rem 0.85rem;
+      font-size: 0.8rem;
+      color: #ffffff;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .form-input:focus, .form-select:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+    .btn-primary {
+      width: 100%;
+      background: #4f46e5;
+      color: #ffffff;
+      border: none;
+      border-radius: 0.75rem;
+      padding: 0.65rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 16px -4px rgba(79, 70, 229, 0.4);
+      transition: all 0.2s;
+    }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-violet {
+      width: 100%;
+      background: #7c3aed;
+      color: #ffffff;
+      border: none;
+      border-radius: 0.75rem;
+      padding: 0.65rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 16px -4px rgba(124, 58, 237, 0.4);
+      transition: all 0.2s;
+    }
+    .btn-violet:hover { background: #6d28d9; }
+    .btn-violet:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .ai-response {
+      background: rgba(2, 6, 23, 0.8);
+      border: 1px solid #1e293b;
+      border-radius: 0.75rem;
+      padding: 0.85rem;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+      max-height: 8rem;
+      overflow-y: auto;
+      margin-top: 0.75rem;
+    }
+
+    /* Queue Chips */
+    .queue-chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      max-height: 11rem;
+      overflow-y: auto;
+      padding: 0.25rem 0;
+    }
+    .queue-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 0.4rem 0.75rem;
+      border-radius: 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #e2e8f0;
+    }
+    .chip-idx {
+      width: 1.1rem;
+      height: 1.1rem;
+      border-radius: 50%;
+      background: #4f46e5;
+      color: #ffffff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Matrix Columns */
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .matrix-col {
+      border-radius: 1rem;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      height: 480px;
+    }
+    .matrix-col.col-q1 {
+      background: rgba(136, 19, 55, 0.15);
+      border: 1px solid rgba(225, 29, 72, 0.4);
+    }
+    .matrix-col.col-q2 {
+      background: rgba(180, 83, 9, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+    .matrix-col.col-q3 {
+      background: rgba(6, 78, 59, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+    }
+    .col-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .dot-pulse {
+      width: 0.6rem;
+      height: 0.6rem;
+      border-radius: 50%;
+      background: #ef4444;
+      animation: pulse 1.5s infinite;
+    }
+    .dot-amber { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: #f59e0b; }
+    .dot-green { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: #10b981; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.9); }
+    }
+
+    .col-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .col-q1 .col-title { color: #fca5a5; }
+    .col-q2 .col-title { color: #fde68a; }
+    .col-q3 .col-title { color: #a7f3d0; }
+
+    .col-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.4rem;
+    }
+    .col-q1 .col-badge { background: #881337; color: #fecdd3; border: 1px solid #be123c; }
+    .col-q2 .col-badge { background: #78350f; color: #fde68a; border: 1px solid #b45309; }
+    .col-q3 .col-badge { background: #064e3b; color: #a7f3d0; border: 1px solid #047857; }
+
+    .matrix-task-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding-right: 0.35rem;
+    }
+
+    /* Task Card */
+    .task-item {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 0.9rem;
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s;
+    }
+    .task-item.border-q1 { border: 1px solid rgba(225, 29, 72, 0.6); }
+    .task-item.border-q2 { border: 1px solid rgba(245, 158, 11, 0.6); }
+    .task-item.border-q3 { border: 1px solid rgba(16, 185, 129, 0.6); }
+
+    .task-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+    .task-cat { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; }
+    .task-name { font-size: 0.8rem; font-weight: 700; color: #ffffff; line-height: 1.3; }
+
+    .task-actions { display: flex; align-items: center; gap: 0.25rem; }
+    .btn-action {
+      background: none;
+      border: none;
+      padding: 0.35rem;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background 0.2s;
+    }
+    .btn-complete { color: #34d399; }
+    .btn-complete:hover { background: #1e293b; color: #6ee7b7; }
+    .btn-delete { color: #f87171; }
+    .btn-delete:hover { background: #1e293b; color: #fca5a5; }
+
+    .task-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.72rem;
+      color: #94a3b8;
+    }
+    .task-date-input {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 0.5rem;
+      padding: 0.15rem 0.45rem;
+      font-size: 0.7rem;
+      color: #a5b4fc;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+    .task-date-input:focus { border-color: #6366f1; }
+    .task-reason {
+      font-size: 0.68rem;
+      color: #a5b4fc;
+      font-style: italic;
+      line-height: 1.3;
+    }
+
+    /* Completed Coursework Section */
+    .archive-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #334155;
+      margin-bottom: 1rem;
+    }
+    .archive-brand { display: flex; align-items: center; gap: 0.75rem; }
+    .archive-badge {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 0.5rem;
+      background: #064e3b;
+      border: 1px solid #047857;
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .archive-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .btn-archive-act {
+      border: 1px solid transparent;
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s;
+    }
+    .btn-archive-reopen { background: rgba(49, 46, 129, 0.6); border-color: #4338ca; color: #c7d2fe; }
+    .btn-archive-reopen:hover { background: #4338ca; color: #ffffff; }
+    .btn-archive-delete { background: rgba(136, 19, 55, 0.6); border-color: #be123c; color: #fecdd3; }
+    .btn-archive-delete:hover { background: #be123c; color: #ffffff; }
+
+    .completed-item {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 0.75rem;
+      padding: 0.65rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      transition: border-color 0.2s;
+    }
+    .completed-item:hover { border-color: #64748b; }
+    .completed-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: line-through;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .empty-state {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: #64748b;
+      font-style: italic;
+      padding: 3rem 0;
+    }
+
+    .hidden { display: none !important; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen pb-20">
+<body>
 
   <!-- Urgent Top Notification Bar -->
-  <div id="notificationAlertBar" class="hidden bg-gradient-to-r from-amber-600 to-rose-600 text-white px-4 py-2.5 text-xs font-semibold text-center flex items-center justify-center gap-2 shadow-lg sticky top-0 z-50">
-    <i class="fa-solid fa-bell animate-bounce"></i>
+  <div id="notificationAlertBar" class="hidden">
+    <i class="fa-solid fa-bell"></i>
     <span id="notificationAlertText"></span>
-    <button onclick="dismissNotificationBar()" class="ml-4 underline text-[11px] opacity-80 hover:opacity-100">Dismiss</button>
+    <button onclick="dismissNotificationBar()" class="dismiss-btn">Dismiss</button>
   </div>
 
   <!-- Navbar -->
-  <header class="border-b border-slate-800 bg-slate-900/60 sticky top-0 z-40 backdrop-blur-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-      
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-          <i class="fa-solid fa-table-cells-large text-white text-lg"></i>
+  <header>
+    <div class="navbar-inner">
+      <div class="brand-wrap">
+        <div class="brand-badge">
+          <i class="fa-solid fa-table-cells-large"></i>
         </div>
         <div>
-          <h1 class="text-lg font-bold text-white tracking-tight">Campus AI Agent</h1>
-          <p class="text-xs text-slate-400">Welcome, <span id="navUserName" class="text-indigo-400 font-semibold">{{ user.full_name }}</span></p>
+          <h1 class="brand-title">Campus AI Agent</h1>
+          <p class="brand-user">Welcome, <span id="navUserName">{{ user.full_name }}</span></p>
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
-        <div class="hidden sm:flex items-center gap-1.5 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs text-slate-300">
-          <i class="fa-regular fa-calendar text-indigo-400"></i>
+      <div class="nav-actions">
+        <div class="date-badge">
+          <i class="fa-regular fa-calendar" style="color: #818cf8;"></i>
           <span>Today (IST):</span>
-          <span id="currentDateDisplay" class="font-bold text-white">--</span>
+          <span id="currentDateDisplay" class="bold">--</span>
         </div>
 
-        <button onclick="enableDeviceNotifications()" id="notifBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 font-medium">
-          <i class="fa-solid fa-bell text-amber-400"></i>
-          <span class="hidden sm:inline">Enable Lock-screen Alerts</span>
+        <button onclick="enableDeviceNotifications()" id="notifBtn" class="btn-nav">
+          <i class="fa-solid fa-bell" style="color: #f59e0b;"></i>
+          <span>Alerts</span>
         </button>
 
         {% if user.role == 'admin' %}
-        <a href="/admin" class="bg-amber-950/60 hover:bg-amber-900/60 border border-amber-800 text-amber-300 text-xs px-3 py-2 rounded-xl font-semibold transition">
-          <i class="fa-solid fa-shield-halved mr-1"></i> Admin Portal
+        <a href="/admin" class="btn-nav" style="border-color: #b45309; color: #fde68a;">
+          <i class="fa-solid fa-shield-halved"></i> Admin Portal
         </a>
         {% endif %}
 
-        <button onclick="logout()" class="bg-rose-950/60 hover:bg-rose-900/60 border border-rose-800 text-rose-300 text-xs px-3.5 py-2 rounded-xl font-semibold transition">
-          <i class="fa-solid fa-power-off mr-1"></i> Sign Out
+        <button onclick="logout()" class="btn-nav btn-logout">
+          <i class="fa-solid fa-power-off"></i> Sign Out
         </button>
       </div>
-
     </div>
   </header>
 
-  <!-- Main Grid Layout -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 mt-8 space-y-8">
+  <!-- Main Grid Content -->
+  <main>
     
-    <!-- Top Row: Add Task, AI Advisor, & Queue -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Top Row: Add Task, AI Advisor, Submission Queue -->
+    <div class="top-grid">
       
-      <!-- 1. Add Task Form -->
-      <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-        <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-circle-plus text-indigo-400"></i> Add Academic Task
+      <!-- 1. Add Task -->
+      <div class="card">
+        <h2 class="card-title">
+          <i class="fa-solid fa-circle-plus" style="color: #818cf8;"></i> Add Academic Task
         </h2>
-        
-        <form onsubmit="handleAddTask(event)" class="space-y-3" novalidate>
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">Task Title <span class="text-rose-400">*</span></label>
-            <input type="text" id="taskTitle" placeholder="e.g. Lab Record Unit 3" required 
-                   class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 transition" />
+        <form onsubmit="handleAddTask(event)">
+          <div class="form-group">
+            <label class="form-label">Task Title <span class="req">*</span></label>
+            <input type="text" id="taskTitle" class="form-input" placeholder="e.g. Lab Record Unit 3" required />
           </div>
 
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">Subject / Course <span class="text-rose-400">*</span></label>
-            <input type="text" id="taskSubject" placeholder="e.g. Deep Learning" required 
-                   class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 transition" />
+          <div class="form-group">
+            <label class="form-label">Subject / Course <span class="req">*</span></label>
+            <input type="text" id="taskSubject" class="form-input" placeholder="e.g. Deep Learning" required />
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="form-row form-group">
             <div>
-              <label class="block text-xs font-medium text-slate-400 mb-1">Category</label>
-              <select id="taskCategory" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+              <label class="form-label">Category</label>
+              <select id="taskCategory" class="form-select">
                 <option value="Assignment">Assignment</option>
                 <option value="Exam / Test">Exam / Test</option>
                 <option value="Lab Record Correction">Lab Record Correction</option>
@@ -101,437 +580,55 @@
               </select>
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-400 mb-1">Deadline Date <span class="text-rose-400">*</span></label>
-              <input type="date" id="taskDeadline" required 
-                     class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500" />
+              <label class="form-label">Deadline Date <span class="req">*</span></label>
+              <input type="date" id="taskDeadline" class="form-input" required />
             </div>
           </div>
 
-          <button type="submit" id="addTaskBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/30">
+          <button type="submit" id="addTaskBtn" class="btn-primary">
             Submit Task for AI Evaluation
           </button>
         </form>
       </div>
 
       <!-- 2. AI Advisor -->
-      <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-        <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-wand-magic-sparkles text-violet-400"></i> AI Academic Advisor
+      <div class="card">
+        <h2 class="card-title">
+          <i class="fa-solid fa-wand-magic-sparkles" style="color: #c084fc;"></i> AI Academic Advisor
         </h2>
-        <div class="space-y-2">
-          <textarea id="aiPrompt" rows="3" placeholder="e.g. How should I prioritize my upcoming exams and lab records this week?" 
-                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-violet-500 transition"></textarea>
-          <button onclick="askGemini()" id="askAiBtn" class="w-full bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-lg shadow-violet-600/30">
-            Ask Academic Advisor
-          </button>
+        <div class="form-group">
+          <textarea id="aiPrompt" class="form-input" rows="3" placeholder="e.g. How should I prioritize my upcoming exams and lab records this week?"></textarea>
         </div>
-
-        <div id="aiResponseBox" class="hidden bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 leading-relaxed max-h-32 overflow-y-auto"></div>
+        <button onclick="askGemini()" id="askAiBtn" class="btn-violet">
+          Ask Academic Advisor
+        </button>
+        <div id="aiResponseBox" class="ai-response hidden"></div>
       </div>
 
       <!-- 3. AI Recommended Submission Queue -->
-      <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4 flex flex-col justify-between">
-        <div class="space-y-3">
-          <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <i class="fa-solid fa-arrow-down-1-9 text-indigo-400"></i> Submission Order Queue
-          </h2>
-          <p class="text-xs text-slate-400">Optimized sequence generated by deadlines and weight.</p>
-          <div id="submissionQueue" class="flex flex-wrap gap-2 text-xs max-h-48 overflow-y-auto custom-scroll p-1">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-        <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
-          <span>Active Queue Items</span>
-          <span id="activeQueueCountBadge" class="font-bold text-indigo-400">0 Items</span>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Main Section 1: Priority Decision Columns (Structured & Balanced) -->
-    <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
         <div>
-          <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
-            <i class="fa-solid fa-table-columns text-indigo-400"></i> Priority Decision Matrix
+          <h2 class="card-title">
+            <i class="fa-solid fa-arrow-down-1-9" style="color: #818cf8;"></i> Submission Order Queue
           </h2>
-          <p class="text-xs text-slate-400">Structured 3-tier workload division based on urgency and academic significance.</p>
+          <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.85rem;">Optimized sequence by deadlines and urgency.</p>
+          <div id="submissionQueue" class="queue-chips-wrap custom-scroll"></div>
         </div>
-        <span id="activeTasksCount" class="text-xs font-bold bg-indigo-950/80 border border-indigo-800 text-indigo-300 px-3 py-1 rounded-full">0 Active Tasks</span>
+        <div style="border-top: 1px solid #334155; padding-top: 0.75rem; display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8;">
+          <span>Active Queue Items</span>
+          <span id="activeQueueCountBadge" style="font-weight: 700; color: #818cf8;">0 Items</span>
+        </div>
       </div>
 
-      <!-- 3-Column Uniform Balanced Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        <!-- Column 1: High Priority / Do Immediately -->
-        <div class="bg-rose-950/20 border border-rose-900/50 rounded-2xl p-4 flex flex-col h-[480px]">
-          <div class="flex items-center justify-between pb-3 mb-3 border-b border-rose-900/40 shrink-0">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-              <h3 class="text-xs font-bold text-rose-300 uppercase tracking-wider">Do Immediately</h3>
-            </div>
-            <span class="text-[10px] font-bold bg-rose-950 border border-rose-800 text-rose-300 px-2 py-0.5 rounded-md">Urgent & High</span>
-          </div>
-          <div id="matrixQ1" class="space-y-3 overflow-y-auto custom-scroll pr-1 flex-1"></div>
-        </div>
-
-        <!-- Column 2: Medium Priority / Schedule & Prepare -->
-        <div class="bg-amber-950/20 border border-amber-900/50 rounded-2xl p-4 flex flex-col h-[480px]">
-          <div class="flex items-center justify-between pb-3 mb-3 border-b border-amber-900/40 shrink-0">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-              <h3 class="text-xs font-bold text-amber-300 uppercase tracking-wider">Schedule & Prepare</h3>
-            </div>
-            <span class="text-[10px] font-bold bg-amber-950 border border-amber-800 text-amber-300 px-2 py-0.5 rounded-md">Important</span>
-          </div>
-          <div id="matrixQ2" class="space-y-3 overflow-y-auto custom-scroll pr-1 flex-1"></div>
-        </div>
-
-        <!-- Column 3: Low Priority / Routine Work -->
-        <div class="bg-emerald-950/20 border border-emerald-900/50 rounded-2xl p-4 flex flex-col h-[480px]">
-          <div class="flex items-center justify-between pb-3 mb-3 border-b border-emerald-900/40 shrink-0">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-              <h3 class="text-xs font-bold text-emerald-300 uppercase tracking-wider">Routine Work</h3>
-            </div>
-            <span class="text-[10px] font-bold bg-emerald-950 border border-emerald-800 text-emerald-300 px-2 py-0.5 rounded-md">Low Urgency</span>
-          </div>
-          <div id="matrixQ3" class="space-y-3 overflow-y-auto custom-scroll pr-1 flex-1"></div>
-        </div>
-
-      </div>
     </div>
 
-    <!-- Main Section 2: Completed Archive with Multi-Select & Delete Actions -->
-    <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-lg bg-emerald-950 border border-emerald-800 text-emerald-400 flex items-center justify-center text-sm font-bold">
-            <i class="fa-solid fa-circle-check"></i>
-          </div>
-          <div>
-            <h2 class="text-sm font-bold text-white uppercase tracking-wider">Completed Coursework Archive</h2>
-            <p class="text-xs text-slate-400">History of submitted assignments, exams, and finished lab records.</p>
-          </div>
+    <!-- Section: 3-Column Balanced Priority Matrix -->
+    <div class="card">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+        <div>
+          <h2 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-table-columns" style="color: #818cf8;"></i> Priority Decision Matrix
+          </h2>
+          <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.2rem;">Balanced 3-tier workload division based on urgency and academic significance.</p>
         </div>
-
-        <!-- Bulk Action Controls -->
-        <div id="completedBulkControls" class="flex items-center gap-2 flex-wrap">
-          <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-700 transition">
-            <input type="checkbox" id="selectAllCompleted" onchange="toggleSelectAllCompleted(this.checked)" class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer" />
-            <span>Select All</span>
-          </label>
-          <button onclick="bulkReopenCompleted()" class="bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-800 text-indigo-300 text-xs px-3 py-1.5 rounded-xl font-semibold transition flex items-center gap-1">
-            <i class="fa-solid fa-rotate-left text-[11px]"></i> Reopen Selected
-          </button>
-          <button onclick="bulkDeleteCompleted()" class="bg-rose-950/80 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs px-3 py-1.5 rounded-xl font-semibold transition flex items-center gap-1">
-            <i class="fa-solid fa-trash text-[11px]"></i> Delete Selected
-          </button>
-        </div>
-      </div>
-
-      <!-- Completed List -->
-      <div id="completedTasksList" class="space-y-2 max-h-72 overflow-y-auto custom-scroll pr-1">
-        <!-- Populated dynamically -->
-      </div>
-    </div>
-
-  </main>
-
-  <script>
-    let activeTasksCache = [];
-    let completedTasksCache = [];
-
-    async function loadTasks() {
-      try {
-        const res = await fetch('/api/tasks');
-        if (res.status === 401) {
-          window.location.href = '/auth';
-          return;
-        }
-        const data = await res.json();
-        
-        activeTasksCache = data.active_tasks || [];
-        completedTasksCache = data.completed_tasks || [];
-
-        document.getElementById('currentDateDisplay').innerText = data.current_date;
-        document.getElementById('navUserName').innerText = data.user.full_name;
-
-        renderMatrix(activeTasksCache, completedTasksCache, data.submission_order);
-        renderCompletedArchive(completedTasksCache);
-        checkAndTriggerUrgentPopups(activeTasksCache);
-      } catch (err) {
-        console.error('Error fetching tasks:', err);
-      }
-    }
-
-    function renderMatrix(active, completed, queue) {
-      const q1 = document.getElementById('matrixQ1');
-      const q2 = document.getElementById('matrixQ2');
-      const q3 = document.getElementById('matrixQ3');
-      const queueBox = document.getElementById('submissionQueue');
-
-      document.getElementById('activeTasksCount').innerText = `${active.length} Active Tasks`;
-      document.getElementById('activeQueueCountBadge').innerText = `${queue.length} In Queue`;
-
-      // Submission Order Queue Chips
-      if (queue.length === 0) {
-        queueBox.innerHTML = '<span class="text-slate-500 italic text-xs">No active tasks in queue.</span>';
-      } else {
-        queueBox.innerHTML = queue.map((t, idx) => `
-          <div class="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl font-medium shadow-sm">
-            <span class="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">${idx + 1}</span>
-            <span class="text-slate-200 text-xs">${t}</span>
-          </div>
-        `).join('');
-      }
-
-      // Filter Tasks by Priority
-      const q1Tasks = active.filter(t => t.priority === 'High');
-      const q2Tasks = active.filter(t => t.priority === 'Medium');
-      const q3Tasks = active.filter(t => t.priority === 'Low');
-
-      const cardHTML = (t, borderClass) => `
-        <div class="bg-slate-900/95 border ${borderClass} rounded-2xl p-3.5 space-y-2.5 transition shadow-sm hover:shadow-md">
-          <div class="flex items-start justify-between gap-2">
-            <div class="space-y-0.5">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">[ ${t.category} ]</span>
-              <h4 class="text-xs font-bold text-white leading-tight">${t.title}</h4>
-            </div>
-            <div class="flex items-center gap-1">
-              <button onclick="toggleComplete(${t.id})" class="text-emerald-400 hover:text-emerald-300 p-1.5 text-xs rounded-lg hover:bg-slate-800 transition" title="Mark as Completed">
-                <i class="fa-solid fa-check"></i>
-              </button>
-              <button onclick="deleteTask(${t.id})" class="text-rose-400 hover:text-rose-300 p-1.5 text-xs rounded-lg hover:bg-slate-800 transition" title="Delete Task">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </div>
-          </div>
-          
-          <div class="text-[11px] text-slate-400 flex flex-wrap items-center justify-between pt-1 gap-2 border-t border-slate-800/80">
-            <span><i class="fa-solid fa-book-open text-slate-500 mr-1"></i>${t.subject}</span>
-            <div class="flex items-center gap-1.5">
-              <span class="font-bold text-slate-200 text-[11px]">${t.remaining_days}</span>
-              <input type="date" value="${t.deadline}" onchange="changeDeadline(${t.id}, this.value)" 
-                     title="Click to update deadline date" 
-                     class="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg px-2 py-0.5 text-[10px] text-indigo-300 font-semibold focus:outline-none focus:border-indigo-500 cursor-pointer transition" />
-            </div>
-          </div>
-          <p class="text-[10px] text-indigo-300/80 italic pt-0.5 leading-snug"><i class="fa-solid fa-brain mr-1 text-[9px]"></i>${t.reason || 'AI Evaluated'}</p>
-        </div>
-      `;
-
-      // Render Columns
-      q1.innerHTML = q1Tasks.length ? q1Tasks.map(t => cardHTML(t, 'border-rose-800/80 hover:border-rose-600')).join('') 
-                                    : '<div class="h-full flex items-center justify-center text-[11px] text-slate-600 italic py-12">No urgent or overdue tasks</div>';
-
-      q2.innerHTML = q2Tasks.length ? q2Tasks.map(t => cardHTML(t, 'border-amber-800/80 hover:border-amber-600')).join('') 
-                                    : '<div class="h-full flex items-center justify-center text-[11px] text-slate-600 italic py-12">No medium priority tasks</div>';
-
-      q3.innerHTML = q3Tasks.length ? q3Tasks.map(t => cardHTML(t, 'border-emerald-800/80 hover:border-emerald-600')).join('') 
-                                    : '<div class="h-full flex items-center justify-center text-[11px] text-slate-600 italic py-12">No routine low-urgency tasks</div>';
-    }
-
-    // Render Completed Coursework Archive with Reopen & Delete buttons and Checkboxes
-    function renderCompletedArchive(completed) {
-      const list = document.getElementById('completedTasksList');
-      const selectAll = document.getElementById('selectAllCompleted');
-      if (selectAll) selectAll.checked = false;
-
-      if (completed.length === 0) {
-        list.innerHTML = '<div class="text-xs text-slate-600 italic py-4 text-center">No completed tasks yet.</div>';
-        return;
-      }
-
-      list.innerHTML = completed.map(t => `
-        <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 hover:border-slate-700 transition">
-          <div class="flex items-center gap-3">
-            <input type="checkbox" value="${t.id}" class="completed-task-checkbox rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer" />
-            <div class="line-through text-xs text-slate-400 flex items-center gap-2">
-              <i class="fa-solid fa-circle-check text-emerald-500"></i>
-              <span class="font-medium text-slate-300">${t.title}</span>
-              <span class="text-slate-500 font-normal">(${t.subject} - ${t.category})</span>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button onclick="toggleComplete(${t.id})" class="bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-800 text-indigo-300 text-xs px-2.5 py-1 rounded-lg font-medium transition flex items-center gap-1" title="Reopen this task">
-              <i class="fa-solid fa-rotate-left text-[10px]"></i> Reopen
-            </button>
-            <button onclick="deleteTask(${t.id})" class="bg-rose-950/60 hover:bg-rose-900/80 border border-rose-800 text-rose-300 text-xs px-2.5 py-1 rounded-lg font-medium transition flex items-center gap-1" title="Permanently delete task">
-              <i class="fa-solid fa-trash text-[10px]"></i> Delete
-            </button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // Toggle Select All Completed Checkboxes
-    function toggleSelectAllCompleted(checked) {
-      document.querySelectorAll('.completed-task-checkbox').forEach(cb => cb.checked = checked);
-    }
-
-    function getSelectedCompletedIds() {
-      const checkedBoxes = document.querySelectorAll('.completed-task-checkbox:checked');
-      return Array.from(checkedBoxes).map(cb => parseInt(cb.value));
-    }
-
-    // Bulk Reopen Selected Completed Tasks
-    async function bulkReopenCompleted() {
-      const ids = getSelectedCompletedIds();
-      if (ids.length === 0) {
-        alert('Please select at least one completed task to reopen.');
-        return;
-      }
-      for (const id of ids) {
-        await fetch(`/api/tasks/${id}/toggle-complete`, { method: 'PUT' });
-      }
-      loadTasks();
-    }
-
-    // Bulk Delete Selected Completed Tasks
-    async function bulkDeleteCompleted() {
-      const ids = getSelectedCompletedIds();
-      if (ids.length === 0) {
-        alert('Please select at least one completed task to delete.');
-        return;
-      }
-      if (!confirm(`Are you sure you want to permanently delete ${ids.length} selected task(s)?`)) return;
-
-      for (const id of ids) {
-        await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
-      }
-      loadTasks();
-    }
-
-    // In-Place Deadline Update
-    async function changeDeadline(taskId, newDeadline) {
-      if (!newDeadline) return;
-      await fetch(`/api/tasks/${taskId}/deadline`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deadline: newDeadline })
-      });
-      loadTasks();
-    }
-
-    // Urgent Alerts Handler (1-Day and 2-Day)
-    function checkAndTriggerUrgentPopups(activeTasks) {
-      const urgent1Day = activeTasks.filter(t => t.days_left === 1 || t.days_left === 0);
-      const urgent2Day = activeTasks.filter(t => t.days_left === 2);
-
-      const alertBar = document.getElementById('notificationAlertBar');
-      const alertText = document.getElementById('notificationAlertText');
-
-      if (urgent1Day.length > 0) {
-        const t = urgent1Day[0];
-        alertBar.classList.remove('hidden');
-        alertText.innerText = `CRITICAL ALERT: '${t.title}' (${t.subject}) is due ${t.days_left === 0 ? 'TODAY' : 'TOMORROW'}!`;
-
-        if (Notification.permission === 'granted') {
-          new Notification(`⚠️ Submission Due ${t.days_left === 0 ? 'Today' : 'Tomorrow'}!`, {
-            body: `'${t.title}' for ${t.subject} is approaching its deadline. Submit now!`,
-            icon: 'https://cdn-icons-png.flaticon.com/512/2997/2997295.png'
-          });
-        }
-      } else if (urgent2Day.length > 0) {
-        const t = urgent2Day[0];
-        alertBar.classList.remove('hidden');
-        alertText.innerText = `REMINDER: '${t.title}' (${t.subject}) is due in 2 days.`;
-      }
-    }
-
-    function dismissNotificationBar() {
-      document.getElementById('notificationAlertBar').classList.add('hidden');
-    }
-
-    async function enableDeviceNotifications() {
-      if (!('Notification' in window)) {
-        alert('This browser does not support desktop notifications.');
-        return;
-      }
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        alert('Lock-screen notifications enabled!');
-        loadTasks();
-      }
-    }
-
-    async function handleAddTask(e) {
-      e.preventDefault();
-      const title = document.getElementById('taskTitle').value.trim();
-      const subject = document.getElementById('taskSubject').value.trim();
-      const category = document.getElementById('taskCategory').value;
-      const deadline = document.getElementById('taskDeadline').value;
-
-      if (!title || !subject || !deadline) return;
-
-      const btn = document.getElementById('addTaskBtn');
-      btn.disabled = true;
-      btn.innerText = 'Evaluating with Gemini...';
-
-      try {
-        await fetch('/api/tasks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, subject, category, deadline })
-        });
-        document.getElementById('taskTitle').value = '';
-        document.getElementById('taskSubject').value = '';
-        document.getElementById('taskDeadline').value = '';
-        loadTasks();
-      } catch (err) {
-        alert('Error adding task: ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Submit Task for AI Evaluation';
-      }
-    }
-
-    async function toggleComplete(taskId) {
-      await fetch(`/api/tasks/${taskId}/toggle-complete`, { method: 'PUT' });
-      loadTasks();
-    }
-
-    async function deleteTask(taskId) {
-      if (!confirm('Are you sure you want to delete this task?')) return;
-      await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
-      loadTasks();
-    }
-
-    async function askGemini() {
-      const prompt = document.getElementById('aiPrompt').value.trim();
-      if (!prompt) return;
-
-      const btn = document.getElementById('askAiBtn');
-      const box = document.getElementById('aiResponseBox');
-      btn.disabled = true;
-      btn.innerText = 'Consulting Gemini...';
-      box.classList.remove('hidden');
-      box.innerText = 'Generating personalized schedule advice...';
-
-      try {
-        const res = await fetch('/api/gemini', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt })
-        });
-        const data = await res.json();
-        box.innerText = data.response || data.error;
-      } catch (err) {
-        box.innerText = 'Error calling AI: ' + err.message;
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Ask Academic Advisor';
-      }
-    }
-
-    async function logout() {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      window.location.href = '/auth';
-    }
-
-    loadTasks();
-  </script>
-</body>
-</html>
+        <span id="activeTasksCount" style="font-size: 0.75rem; font-weight: 700; background: rgba(49, 46, 129, 0.8); border: 1px solid #4338ca; color: #c7d2fe; padding: 0.35rem 0.85rem; border-
