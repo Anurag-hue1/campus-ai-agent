@@ -4,102 +4,306 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Campus AI Agent - Login</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
-    /* Direct resilient fallback styles ensuring dark theme and centered layout even if CDN is blocked */
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+
     body {
-      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #020617;
+      background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0b0f19 50%, #020617 100%);
       color: #f8fafc;
       min-height: 100vh;
-      margin: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
+      padding: 1.5rem;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 1.5rem;
+      padding: 2.25rem 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.1);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position: relative;
+    }
+
+    .brand-header {
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+
+    .brand-icon-box {
+      width: 3.5rem;
+      height: 3.5rem;
+      margin: 0 auto 1rem;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .brand-icon-box.admin-mode {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      box-shadow: 0 10px 20px -5px rgba(239, 68, 68, 0.4);
+    }
+
+    .brand-icon-box i {
+      font-size: 1.5rem;
+      color: #ffffff;
+    }
+
+    .brand-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    .brand-subtitle {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    .alert-box {
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 500;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .alert-box.hidden {
+      display: none;
+    }
+
+    .alert-error {
+      background: rgba(136, 19, 55, 0.5);
+      border: 1px solid rgba(225, 29, 72, 0.6);
+      color: #fecdd3;
+    }
+
+    .alert-success {
+      background: rgba(6, 78, 59, 0.5);
+      border: 1px solid rgba(16, 185, 129, 0.6);
+      color: #a7f3d0;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 0.4rem;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+
+    .form-input {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 0.85rem;
+      padding: 0.75rem 1rem 0.75rem 2.6rem;
+      font-size: 0.85rem;
+      color: #ffffff;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-input::placeholder {
+      color: #64748b;
+    }
+
+    .form-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+      background: #0f172a;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #ffffff;
+      border: none;
+      border-radius: 0.85rem;
+      padding: 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+      transition: all 0.2s ease;
+      margin-top: 0.5rem;
+    }
+
+    .btn-submit.admin-btn {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      box-shadow: 0 10px 20px -5px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-submit:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .divider {
+      border-top: 1px solid rgba(51, 65, 85, 0.6);
+      margin: 1.25rem 0 0.75rem;
+    }
+
+    .toggle-text {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+
+    .toggle-btn {
+      background: none;
+      border: none;
+      color: #818cf8;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0 0.25rem;
+    }
+
+    .admin-toggle-wrapper {
+      margin-top: 0.85rem;
+      text-align: center;
+    }
+
+    .admin-toggle-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: color 0.2s ease;
+    }
+
+    .admin-toggle-btn:hover {
+      color: #f59e0b;
+    }
+
+    .admin-toggle-btn i {
+      color: #f59e0b;
+    }
+
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
+<body>
 
-  <!-- Authentication Box -->
-  <div class="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden backdrop-blur-xl">
+  <div class="auth-card">
     
-    <!-- Header / Branding -->
-    <div class="text-center space-y-2">
-      <div id="portalIconBg" class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 transition-all duration-300">
-        <i id="portalIcon" class="fa-solid fa-graduation-cap text-white text-2xl"></i>
+    <!-- Branding Header -->
+    <div class="brand-header">
+      <div id="portalIconBg" class="brand-icon-box">
+        <i id="portalIcon" class="fa-solid fa-graduation-cap"></i>
       </div>
-      <h1 id="portalTitle" class="text-2xl font-bold text-white tracking-tight">Student Login</h1>
-      <p id="portalSubtitle" class="text-xs text-slate-400">Enter your Roll Number / User ID to access your academic board</p>
+      <h1 id="portalTitle" class="brand-title">Student Login</h1>
+      <p id="portalSubtitle" class="brand-subtitle">Enter your Roll Number / User ID to access your academic board</p>
     </div>
 
-    <!-- Dynamic Alert Box -->
-    <div id="authAlert" class="hidden p-3 rounded-xl text-xs font-medium border flex items-center gap-2"></div>
+    <!-- Alert Box -->
+    <div id="authAlert" class="alert-box alert-error hidden"></div>
 
     <!-- Auth Form -->
-    <form id="loginForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+    <form id="loginForm" onsubmit="handleAuthSubmit(event)">
       
-      <!-- Full Name (Only when creating account) -->
-      <div id="nameFieldGroup" class="hidden space-y-1">
-        <label class="block text-xs font-semibold text-slate-300">Full Name <span class="text-rose-400">*</span></label>
-        <div class="relative">
-          <i class="fa-solid fa-user absolute left-3.5 top-3 text-slate-500 text-xs"></i>
-          <input type="text" id="authFullName" placeholder="e.g. Anurag Verma" 
-                 class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+      <!-- Full Name (Only for Registration) -->
+      <div id="nameFieldGroup" class="form-group hidden">
+        <label class="form-label">Full Name <span style="color: #f43f5e;">*</span></label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-user input-icon"></i>
+          <input type="text" id="authFullName" class="form-input" placeholder="e.g. Anurag Verma" />
         </div>
       </div>
 
       <!-- User ID / Roll Number -->
-      <div class="space-y-1">
-        <label id="userIdLabel" class="block text-xs font-semibold text-slate-300">User ID / Roll Number <span class="text-rose-400">*</span></label>
-        <div class="relative">
-          <i id="userIdIcon" class="fa-solid fa-id-badge absolute left-3.5 top-3 text-slate-500 text-xs"></i>
-          <input type="text" id="authUserId" required placeholder="e.g. 22B91A0501 or user1" autocomplete="username"
-                 class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+      <div class="form-group">
+        <label id="userIdLabel" class="form-label">User ID / Roll Number <span style="color: #f43f5e;">*</span></label>
+        <div class="input-wrapper">
+          <i id="userIdIcon" class="fa-solid fa-id-badge input-icon"></i>
+          <input type="text" id="authUserId" class="form-input" required placeholder="e.g. 22B91A0501 or user1" autocomplete="username" />
         </div>
       </div>
 
       <!-- Password -->
-      <div class="space-y-1">
-        <label class="block text-xs font-semibold text-slate-300">Password <span class="text-rose-400">*</span></label>
-        <div class="relative">
-          <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-500 text-xs"></i>
-          <input type="password" id="authPassword" required placeholder="Enter password (min 6 chars)" autocomplete="current-password"
-                 class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+      <div class="form-group">
+        <label class="form-label">Password <span style="color: #f43f5e;">*</span></label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-lock input-icon"></i>
+          <input type="password" id="authPassword" class="form-input" required placeholder="Enter password (min 6 chars)" autocomplete="current-password" />
         </div>
       </div>
 
       <!-- Submit Button -->
-      <button type="submit" id="authSubmitBtn" 
-              class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
+      <button type="submit" id="authSubmitBtn" class="btn-submit">
         Login to Dashboard
       </button>
     </form>
 
-    <!-- Switch Between Login & Create Account -->
-    <div id="studentToggleGroup" class="text-center text-xs text-slate-400 pt-1 border-t border-slate-800/80">
-      <span id="switchPrompt">Don't have an account?</span>
-      <button type="button" onclick="toggleRegisterMode()" id="switchBtn" class="text-indigo-400 font-semibold hover:underline ml-1">Create Account</button>
+    <div id="studentToggleGroup">
+      <div class="divider"></div>
+      <div class="toggle-text">
+        <span id="switchPrompt">Don't have an account?</span>
+        <button type="button" onclick="toggleRegisterMode()" id="switchBtn" class="toggle-btn">Create Account</button>
+      </div>
     </div>
 
-    <!-- Admin Portal Toggle Link -->
-    <div class="text-center pt-1">
-      <button type="button" onclick="toggleAdminMode()" id="adminToggleBtn" 
-              class="text-xs text-slate-400 hover:text-amber-400 transition flex items-center justify-center gap-1.5 mx-auto font-medium">
-        <i id="adminToggleIcon" class="fa-solid fa-shield-halved text-amber-500"></i>
+    <div class="admin-toggle-wrapper">
+      <button type="button" onclick="toggleAdminMode()" id="adminToggleBtn" class="admin-toggle-btn">
+        <i id="adminToggleIcon" class="fa-solid fa-shield-halved"></i>
         <span id="adminToggleText">Go to Admin Portal</span>
       </button>
     </div>
@@ -112,20 +316,20 @@
 
     function showAlert(msg, isError = true) {
       const alert = document.getElementById('authAlert');
-      alert.classList.remove('hidden', 'bg-rose-950/60', 'border-rose-800', 'text-rose-300', 'bg-emerald-950/60', 'border-emerald-800', 'text-emerald-300');
+      alert.classList.remove('hidden', 'alert-error', 'alert-success');
       if (isError) {
-        alert.classList.add('bg-rose-950/60', 'border-rose-800', 'text-rose-300');
-        alert.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-400"></i><span>${msg}</span>`;
+        alert.classList.add('alert-error');
+        alert.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i><span>${msg}</span>`;
       } else {
-        alert.classList.add('bg-emerald-950/60', 'border-emerald-800', 'text-emerald-300');
-        alert.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i><span>${msg}</span>`;
+        alert.classList.add('alert-success');
+        alert.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>${msg}</span>`;
       }
     }
 
     function toggleRegisterMode() {
       isRegisterMode = !isRegisterMode;
       document.getElementById('authAlert').classList.add('hidden');
-      
+
       const nameGroup = document.getElementById('nameFieldGroup');
       const submitBtn = document.getElementById('authSubmitBtn');
       const title = document.getElementById('portalTitle');
@@ -136,7 +340,7 @@
       if (isRegisterMode) {
         nameGroup.classList.remove('hidden');
         title.innerText = 'Create Account';
-        subtitle.innerText = 'Choose a User ID / Roll Number and Password to register';
+        subtitle.innerText = 'Register your Roll Number / User ID and Password';
         submitBtn.innerText = 'Create Account';
         switchPrompt.innerText = 'Already have an account?';
         switchBtn.innerText = 'Login';
@@ -153,8 +357,7 @@
     function toggleAdminMode() {
       isAdminMode = !isAdminMode;
       document.getElementById('authAlert').classList.add('hidden');
-      
-      // Clear fields
+
       document.getElementById('authUserId').value = '';
       document.getElementById('authPassword').value = '';
       document.getElementById('authFullName').value = '';
@@ -177,35 +380,37 @@
         nameGroup.classList.add('hidden');
         studentToggle.classList.add('hidden');
 
-        iconBg.className = 'w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-amber-600 to-rose-600 flex items-center justify-center shadow-lg shadow-amber-500/30 transition-all duration-300';
-        icon.className = 'fa-solid fa-shield-halved text-white text-2xl';
+        iconBg.classList.add('admin-mode');
+        icon.className = 'fa-solid fa-shield-halved';
         title.innerText = 'Admin Portal';
         subtitle.innerText = 'Restricted Administrator Control Access';
-        submitBtn.className = 'w-full bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white text-xs font-bold py-3 rounded-xl transition shadow-lg shadow-amber-600/30';
+        submitBtn.classList.add('admin-btn');
         submitBtn.innerText = 'Authenticate as Administrator';
 
-        userIdLabel.innerHTML = 'Admin User ID <span class="text-rose-400">*</span>';
-        userIdIcon.className = 'fa-solid fa-user-shield absolute left-3.5 top-3 text-slate-500 text-xs';
+        userIdLabel.innerHTML = 'Admin User ID <span style="color: #f43f5e;">*</span>';
+        userIdIcon.className = 'fa-solid fa-user-shield input-icon';
         userInput.placeholder = 'Enter Admin ID (default: admin)';
 
         adminToggleText.innerText = 'Switch to Student Login';
-        adminToggleIcon.className = 'fa-solid fa-graduation-cap text-indigo-400';
+        adminToggleIcon.className = 'fa-solid fa-graduation-cap';
+        adminToggleIcon.style.color = '#818cf8';
       } else {
         studentToggle.classList.remove('hidden');
 
-        iconBg.className = 'w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 transition-all duration-300';
-        icon.className = 'fa-solid fa-graduation-cap text-white text-2xl';
+        iconBg.classList.remove('admin-mode');
+        icon.className = 'fa-solid fa-graduation-cap';
         title.innerText = 'Student Login';
         subtitle.innerText = 'Enter your Roll Number / User ID to access your academic board';
-        submitBtn.className = 'w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30';
+        submitBtn.classList.remove('admin-btn');
         submitBtn.innerText = 'Login to Dashboard';
 
-        userIdLabel.innerHTML = 'User ID / Roll Number <span class="text-rose-400">*</span>';
-        userIdIcon.className = 'fa-solid fa-id-badge absolute left-3.5 top-3 text-slate-500 text-xs';
+        userIdLabel.innerHTML = 'User ID / Roll Number <span style="color: #f43f5e;">*</span>';
+        userIdIcon.className = 'fa-solid fa-id-badge input-icon';
         userInput.placeholder = 'e.g. 22B91A0501 or user1';
 
         adminToggleText.innerText = 'Go to Admin Portal';
-        adminToggleIcon.className = 'fa-solid fa-shield-halved text-amber-500';
+        adminToggleIcon.className = 'fa-solid fa-shield-halved';
+        adminToggleIcon.style.color = '#f59e0b';
       }
     }
 
